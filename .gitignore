@@ -35,3 +35,22 @@
 *.png
 
 *.swp
+
+*.acn
+*.acr
+*.alg
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.fdb_latexmk
+*.fls
+*.glg
+*.glo
+*.gls
+*.glsdefs
+*.ist
+*.log
+*.out
+*.pdf
+*.toc
