@@ -20,14 +20,18 @@ int init_nv12_frame(const unsigned int width, const unsigned int height, FRAME* 
     return 1;
 }
 
-int read_nv12_frame(FILE* fp, const unsigned int width, const unsigned int height, FRAME* out){
-    if(fp == NULL)
+int read_nv12_frame(FILE* fp, FRAME* out){
+    if(fp == NULL){
         return 0;
-    int ret = fread(out->lum, 1, sizeof(uint8_t)*(height*width), fp);
-    if(ret != sizeof(uint8_t)*height*width)
+    }
+    int sz = out->width * out-> height;
+    int ret = fread(out->lum, 1, sz, fp);
+    if(ret != sizeof(uint8_t)*sz){
         return 0;
-    ret = fread(out->chrm, 1, sizeof(uint8_t)*(height*width), fp);
-    if(ret != sizeof(uint8_t)*height*width)
+    }
+    ret = fread(out->chrm, 1, sizeof(uint8_t)*sz, fp);
+    if(ret != sizeof(uint8_t)*sz){
         return 0;
+    }
     return 1;
 }

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 typedef struct FRAME {
     unsigned int width, height;
@@ -11,6 +12,6 @@ typedef struct FRAME {
 } FRAME;
 
 int init_nv12_frame(const unsigned int width, const unsigned int height, FRAME* frm);
-int read_nv12_frame(FILE* fp, const unsigned int width, const unsigned int height, FRAME* out);
+int read_nv12_frame(FILE* fp, FRAME* out);
 
 #endif
