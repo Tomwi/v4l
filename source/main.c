@@ -1,13 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <SDL/SDL.h>
+#include <assert.h>
 
 #include "fwht.h"
 #include "nv12.h"
+#include "rlc.h"
 
 #define WIDTH (1280)
 #define HEIGHT (720)
-#define FPS (30)
+#define FPS (60)
 
 #if 0
 uint8_t testblock[8*8] = {
@@ -26,6 +29,7 @@ int16_t out[8*8];
 
 uint8_t frame[WIDTH*HEIGHT];
 int16_t out[WIDTH*HEIGHT];
+int16_t out_rlc[WIDTH*HEIGHT];
 
 int main(int argc, char** argv){
     FRAME frm;
@@ -45,33 +49,37 @@ int main(int argc, char** argv){
         return 0;
     }
 
-    if(!read_nv12_frame(fp, &frm)){
-        printf("Error during read\n");
-        return 0;
-    }
-
-    fclose(fp);
-
     clock_t start = clock(), diff;
     int i,j,k;
     for(int k=0; k<FPS; k++){
+        if(!read_nv12_frame(fp, &frm)){
+            printf("Error during read\n");
+            return 0;
+        }
+
+
+
         uint8_t* input = frm.lum;
         int16_t* output = out;
-
+        int16_t* rlco = out_rlc;
         for(j=0; j<HEIGHT/8; j++){
             for(i=0; i<WIDTH/8; i++){
-                fwht(input, out);
+                fwht(input, output);
+                int ret = rlc(output, rlco);
+                rlco += ret;
                 output += 8;
                 input += 8;
              }
             output += WIDTH*7;
             input += WIDTH*7;
-        }        
+        }       
+        printf("Compression ratio %lf \%\n",
+               ((float)(WIDTH*HEIGHT))/(rlco - out_rlc)*100); 
     } 
     diff = clock() - start;
 
     int msec = diff * 1000 / CLOCKS_PER_SEC;
-    printf("Time taken %d seconds %d milliseconds", msec/1000, msec%1000);
+    printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 #if 0
     int16_t*    print = out;
     int8_t* print2 = frm.lum;
@@ -85,5 +93,7 @@ int main(int argc, char** argv){
         printf("\n");
     }
 #endif
+
+    fclose(fp);
     return 0;   
 }

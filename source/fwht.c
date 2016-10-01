@@ -22,16 +22,16 @@ void fwht(uint8_t* block, int16_t* output_block){
         /* Completely unrolled */
        
         // stage 1
-        workspace1[0]  = tmp[0] + tmp[1];
+        workspace1[0]  = tmp[0] + tmp[1] - 256;
         workspace1[1]  = tmp[0] - tmp[1];     
 
-        workspace1[2]  = tmp[2] + tmp[3];
+        workspace1[2]  = tmp[2] + tmp[3] - 256;
         workspace1[3]  = tmp[2] - tmp[3];
 
-        workspace1[4]  = tmp[4] + tmp[5];
+        workspace1[4]  = tmp[4] + tmp[5] - 256;
         workspace1[5]  = tmp[4] - tmp[5];
 
-        workspace1[6]  = tmp[6] + tmp[7];
+        workspace1[6]  = tmp[6] + tmp[7] - 256;
         workspace1[7]  = tmp[6] - tmp[7];
         
         // stage 2
@@ -87,14 +87,14 @@ void fwht(uint8_t* block, int16_t* output_block){
         workspace2[7] = workspace1[5] + workspace1[7];
 
         // stage 3
-        out[0*8] = workspace2[0] + workspace2[4];
-        out[1*8] = workspace2[0] - workspace2[4];
-        out[2*8] = workspace2[1] - workspace2[5];
-        out[3*8] = workspace2[1] + workspace2[5];
-        out[4*8] = workspace2[2] + workspace2[6];
-        out[5*8] = workspace2[2] - workspace2[6];
-        out[6*8] = workspace2[3] - workspace2[7];
-        out[7*8] = workspace2[3] + workspace2[7];
+        out[0*8] = (workspace2[0] + workspace2[4]) >> 2;
+        out[1*8] = (workspace2[0] - workspace2[4]) >> 2;
+        out[2*8] = (workspace2[1] - workspace2[5])>> 2;
+        out[3*8] = (workspace2[1] + workspace2[5])>>2;
+        out[4*8] = (workspace2[2] + workspace2[6])>>2;
+        out[5*8] = (workspace2[2] - workspace2[6])>>2;
+        out[6*8] = (workspace2[3] - workspace2[7])>>2;
+        out[7*8] = (workspace2[3] + workspace2[7])>>2;
     }
 }
 
