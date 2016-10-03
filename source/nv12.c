@@ -29,8 +29,8 @@ int read_nv12_frame(FILE* fp, FRAME* out){
     if(ret != sizeof(uint8_t)*sz){
         return 0;
     }
-    ret = fread(out->chrm, 1, sizeof(uint8_t)*sz, fp);
-    if(ret != sizeof(uint8_t)*sz){
+    ret = fread(out->chrm, 1, sizeof(uint8_t)*sz/2, fp);
+    if(ret != sizeof(uint8_t)*sz/2){
         return 0;
     }
     return 1;
