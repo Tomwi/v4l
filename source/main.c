@@ -11,7 +11,7 @@
 
 #define WIDTH (1280)
 #define HEIGHT (720)
-#define FPS (60)
+#define FPS (30)
 
 #define MAX_PCHAIN (10)
 
@@ -35,8 +35,9 @@ uint8_t frame[WIDTH*HEIGHT], ref_frame[WIDTH*HEIGHT];
 int16_t out[WIDTH*HEIGHT];
 int16_t out_rlc[WIDTH*HEIGHT+WIDTH*HEIGHT/64]; // + headers for each block.
 
+int16_t out_derlc[WIDTH*HEIGHT];
 int16_t out_dec[WIDTH*HEIGHT];
-
+uint8_t out_final[WIDTH*HEIGHT];
 
 int16_t tmp_block[8*8], ref_block[8*8];
 
@@ -51,23 +52,62 @@ inline void fillBlock(uint8_t* input, int16_t* dst){
     }
 }
 
-int itra_dec(int8_t* current, int8_t* reference, int16_t* deltablock){
+inline void addDeltas(int16_t* deltas, uint8_t *ref, uint8_t* input){
+   for(int k=0; k<8; k++){
+        for(int l=0; l<8; l++){
+
+//            printf("(%d,%d, %d),", *deltas+*ref, *input, *deltas); 
+            *deltas += *ref++;
+            if(*deltas < 0){
+                *deltas = 0;
+            }
+            else if(*deltas > 255){
+                *deltas = 255;
+            }
+            deltas++;
+            input++;
+        }
+ //       printf("\n");
+        input += WIDTH-8;
+        ref += WIDTH-8;
+        deltas += WIDTH-8;
+    }
+}
+
+
+int itra_dec(uint8_t* current, uint8_t* reference, int16_t* deltablock, int trigger){
+    //return 1;
     int16_t tmp[64];
     fillBlock(current, tmp);
     int varc = var(tmp);
-
-               // calculate delta
+#if 0
+    if(trigger==143)
+        printf("DELTA CALC\n");
+#endif
     int k,l;
     int16_t* work = tmp;
     for(int k=0; k<8; k++){
         for(int l=0; l<8; l++){
-            *deltablock++ = *work++ - *reference++;
+
+            *deltablock = *work - *reference;
+#if 0
+            if(trigger == 143){
+                printf("(%d,%d,%d),", *work, *reference, *deltablock); 
+            }
+#endif
+            deltablock++;
+            work++;
+            reference++;
         }
+#if 0        
+        if(trigger==143)
+            printf("\n");
+#endif
         reference += WIDTH-8;
     }
     deltablock-=64;
     int vard = var(deltablock);
-    return varc <= vard;
+    return (varc <= vard ? 1 : 0);
 }
 
 
@@ -94,8 +134,8 @@ int main(int argc, char** argv){
 
     clock_t start = clock(), diff;
     int i,j,k;
-    
-    fseek(fp, (WIDTH*HEIGHT + WIDTH*HEIGHT/2)*302, SEEK_SET);
+    int pcount = 0;
+    fseek(fp, (WIDTH*HEIGHT + WIDTH*HEIGHT/2)*500, SEEK_SET);
 
     uint8_t* reference = ref_frame;
     
@@ -109,66 +149,93 @@ int main(int argc, char** argv){
         uint8_t* input = frm.lum;
         int16_t* output = out;
         int16_t* rlco = out_rlc;
+        int16_t* derlco = out_derlc;
+        int16_t* defwht = out_dec;
+
         int cnt = 0;
     
         int waspcoded = 0;
         for(j=0; j<HEIGHT/8; j++){
             for(i=0; i<WIDTH/8; i++){
                 // intra code, first frame is always intra coded.
-                int pframe;
-                if((pframe=itra_dec(input, reference+(int)(input-frm.lum), deltablock)) || k==0 || pchain == MAX_PCHAIN){
+                int iframe;
+                if((iframe=itra_dec(input, reference+(int)(input-frm.lum), deltablock, i)) || k==0 || pchain == MAX_PCHAIN){
+                    iframe = 1;
                     fwht(input, output, WIDTH, WIDTH, 1);
                 }
                 // inter code
                 else{
+                    pcount--;
                     waspcoded = 1;
-                    fwht(deltablock, output, 0, WIDTH, 0);
+                    fwht16(deltablock, output, 0, WIDTH, 0);
                 }
               
-                int ret = rlc(output, rlco, WIDTH, pframe);               
-                int stat = derlc(rlc, out_dec, WIDTH);
-#if 0
-                if(stat & PFRAME_BIT){
-                    
+                int ret = rlc(output, rlco, WIDTH, iframe ? 0 : 1);               
+                // decompress freshly coded coefficients
+                int stat = derlc(rlco, derlco, WIDTH);
+                // inverse transform them
+                ifwht(derlco, defwht, WIDTH, WIDTH, iframe);
+               
+      
+                // This block was P-coded
+#if 1 
+                if(iframe==0){
+                    // add refernce to it.                    
+                    uint8_t* refp = reference + j*8*WIDTH+ i*8;
+                //    addDeltas(defwht, refp, input);
+                    pcount++;
                 }
-#endif                 
+#endif
+                /* Update rlc output block-pointers */
                 rlco += ret;
+                // fwht outputs a block of 8 coefficients, so does derlc
                 output += 8;
+                derlco += 8;
+                // so we shift our input by the same amount
                 input += 8;
+                // and for the decoder we need to shift our "
+                defwht += 8;               
              }
+            derlco += WIDTH*7;
             output += WIDTH*7;
             input += WIDTH*7;
+            defwht += WIDTH*7;
         }       
         if(pchain == MAX_PCHAIN)
             pchain = 0;
         /* Increase pchain count */
         if(waspcoded)
             pchain++;
-        printf("pchain %d\n", pchain); 
         printf("Compression ratio %lf \%\n",
                ((float)(WIDTH*HEIGHT))/(rlco - out_rlc)*100); 
 #ifdef WRITE
-    fwrite(out, 1, sizeof(int16_t)*WIDTH*HEIGHT, fp2);
+        int a;
+        for(a=0; a<WIDTH*HEIGHT; a++)
+            out_final[a] = (uint8_t)out_dec[a];
+
+            fwrite(out_final, 1, sizeof(uint8_t)*WIDTH*HEIGHT, fp2);
 #endif 
-        uint16_t* swp = reference;
-        reference = frm.lum;
- 
-       frm.lum = reference;
+            uint16_t* swp = reference;
+            reference = frm.lum;
+           frm.lum = swp;
     } 
     diff = clock() - start;
 
     int msec = diff * 1000 / CLOCKS_PER_SEC;
     printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
-#if 0
-    int16_t*    print = out;
+    printf("pframes balanced ? %d\n", pcount);
+#if 1
+    int16_t*    print = out_derlc;
     int8_t* print2 = frm.lum;
+    int16_t* print3 = out_dec;
 
     for(j=0; j<8; j++){
         for(i=0; i<8; i++){
-            printf("(%d,%d),", *print++, *print2++);
+            printf("(%d vs %d, %d),", *print++, *print3++, *print2++);
         }
         print+= WIDTH-8;
         print2 += WIDTH-8;
+        print3 += WIDTH-8;
         printf("\n");
     }
 #endif

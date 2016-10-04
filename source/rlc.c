@@ -1,5 +1,7 @@
 #include "rlc.h"
 
+//#define DEBUG
+
 
 uint8_t zigzag[64] = {
     0, 
@@ -35,7 +37,9 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
 		}
 	}
 
-    *output++ |= (pframe ? PFRAME_BIT : 0);
+    *output++ = (pframe ? PFRAME_BIT : 0);
+//    printf("encoding p-block %d\n", pframe ? PFRAME_BIT : 0);
+    ret++;
 
     while(i < 64){
        int cnt = 0;
@@ -51,6 +55,9 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
        }
        // 4 bits for run, 12 for coefficient (quantization by 4)
 //        printf("%d leading zeros for %d, @ %d\n", cnt, tmp, i);
+#ifdef DEBUG
+       printf("rlc: (%d, %d)\n", cnt, tmp); 
+#endif
        *output++ = cnt | tmp << 4;
        i++;
        ret++;
@@ -59,9 +66,10 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
 }
 
 
-int derlc(uint16_t* rlc_in, int16_t* dwht_out, int stride){
+int derlc(int16_t* rlc_in, int16_t* dwht_out, int stride){
     // header
-    int ret = *rlc_in++;
+    int16_t ret = *rlc_in++;
+//    printf("decoding %d\n", ret);
     int dec_count = 0;
     
     int16_t block[8*8];
@@ -70,17 +78,24 @@ int derlc(uint16_t* rlc_in, int16_t* dwht_out, int stride){
     // Now de-compress 
     while(dec_count != 8*8){
         int length = *rlc_in & 0xF;
-        // Buffer is u16 to perform a logical instead of arithmetic shift
         int coeff  = (*rlc_in++) >> 4;
+#ifdef DEBUG
+        printf("derlc: length vs coeff %d %d\n", length, coeff);
+#endif
         for(i=0; i<length; i++, dec_count++)
-            *wp++ = coeff;    
+            *wp++ = 0;
+        *wp++ = coeff;
+        dec_count++;    
     }
-    
-    for(j=0; j<8; j++){
-        for(i=0; i<8; i++){
-            *dwht_out++ = block[zigzag[i+j*8]]; 
-        }
-        if(stride > 0)
-            dwht_out += stride - 8;
-    } 
+   
+    wp = block;
+
+   for(i=0; i<64; i++){
+        int pos = zigzag[i];
+        int y = pos/8;
+        int x = pos%8;
+        dwht_out[x + y*stride] = *wp++;
+   } 
+
+   return ret; 
 }
