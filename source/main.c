@@ -11,11 +11,12 @@
 
 #define WIDTH (1280)
 #define HEIGHT (720)
-#define FPS (30)
+#define FPS (900)
 
 #define MAX_PCHAIN (10)
 
-#define WRITE
+//#define WRITE
+
 #if 0
 uint8_t testblock[8*8] = {
     1,0,0,0,0,0,0,0, 
@@ -111,7 +112,80 @@ int itra_dec(uint8_t* current, uint8_t* reference, int16_t* deltablock, int trig
 }
 
 
+
+static _Bool init_app(const char * name, SDL_Surface * icon, uint32_t flags)
+{
+    atexit(SDL_Quit);
+    if(SDL_Init(flags) < 0)
+        return 0;
+
+    SDL_WM_SetCaption(name, name);
+    SDL_WM_SetIcon(icon, NULL);
+
+    return 1;
+}
+
+static uint8_t * init_data(uint8_t * data)
+{
+    for(size_t i = WIDTH * HEIGHT * 3; i--; )
+        data[i] = (i % 3 == 0) ? (i / 3) % WIDTH :
+            (i % 3 == 1) ? (i / 3) / WIDTH : 0;
+
+    return data;
+}
+
+static _Bool process(uint8_t * data)
+{
+    for(SDL_Event event; SDL_PollEvent(&event);)
+        if(event.type == SDL_QUIT) return 0;
+
+    for(size_t i = 0; i < WIDTH * HEIGHT * 3; i += 1 + rand() % 3)
+        data[i] -= rand() % 8;
+
+    return 1;
+}
+
+static void render(SDL_Surface * sf)
+{
+    SDL_Surface * screen = SDL_GetVideoSurface();
+    if(SDL_BlitSurface(sf, NULL, screen, NULL) == 0)
+        SDL_UpdateRect(screen, 0, 0, 0, 0);
+}
+
+static int filter(const SDL_Event * event)
+{ return event->type == SDL_QUIT; }
+
+#define mask32(BYTE) (*(uint32_t *)(uint8_t [4]){ [BYTE] = 0xff })
+
 int main(int argc, char** argv){
+
+	 (void)argc, (void)argv;
+    static uint8_t buffer[WIDTH * HEIGHT * 3];
+
+    _Bool ok =
+        init_app("V4L WHT CODEC", NULL, SDL_INIT_VIDEO);
+
+         SDL_Surface *screen = SDL_SetVideoMode(WIDTH, HEIGHT, 8, SDL_HWPALETTE);
+
+    assert(ok);
+
+	SDL_Color colors[256];
+int d;
+
+for(d = 0; d < 256; d++)
+{
+    colors[d].r = colors[d].g = colors[d].b = d;
+}
+
+
+
+    SDL_Surface * data_sf = SDL_CreateRGBSurfaceFrom(
+        out_final, WIDTH, HEIGHT, 8, WIDTH,
+        mask32(0), mask32(1), mask32(2), 0);
+
+	SDL_SetPalette(screen, SDL_LOGPAL|SDL_PHYSPAL, colors, 0, 256);
+    SDL_SetEventFilter(filter);
+
     FRAME frm;
 
     if(argc <= 1){
@@ -135,7 +209,7 @@ int main(int argc, char** argv){
     clock_t start = clock(), diff;
     int i,j,k;
     int pcount = 0;
-    fseek(fp, (WIDTH*HEIGHT + WIDTH*HEIGHT/2)*500, SEEK_SET);
+    fseek(fp, (WIDTH*HEIGHT + WIDTH*HEIGHT/2)*0, SEEK_SET);
 
     uint8_t* reference = ref_frame;
     
@@ -182,7 +256,7 @@ int main(int argc, char** argv){
                 if(iframe==0){
                     // add refernce to it.                    
                     uint8_t* refp = reference + j*8*WIDTH+ i*8;
-                //    addDeltas(defwht, refp, input);
+                    addDeltas(defwht, refp, input);
                     pcount++;
                 }
 #endif
@@ -208,10 +282,13 @@ int main(int argc, char** argv){
             pchain++;
         printf("Compression ratio %lf \%\n",
                ((float)(WIDTH*HEIGHT))/(rlco - out_rlc)*100); 
-#ifdef WRITE
-        int a;
+    	int a;
         for(a=0; a<WIDTH*HEIGHT; a++)
             out_final[a] = (uint8_t)out_dec[a];
+SDL_Delay(40);
+ 	render(data_sf);
+#ifdef WRITE
+    
 
             fwrite(out_final, 1, sizeof(uint8_t)*WIDTH*HEIGHT, fp2);
 #endif 
