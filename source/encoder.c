@@ -14,6 +14,6 @@ int var(int16_t* input){
         mean += *input;
         ssum += *input * *input;
     }
-    ssum /=64;
+    // don't normalize 
     return ssum - mean*mean/(64*64);         
 }

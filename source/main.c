@@ -11,7 +11,7 @@
 
 #define WIDTH (1280)
 #define HEIGHT (720)
-#define FPS (900)
+#define FPS (120)
 
 #define MAX_PCHAIN (10)
 
@@ -43,7 +43,7 @@ uint8_t out_final[WIDTH*HEIGHT];
 int16_t tmp_block[8*8], ref_block[8*8];
 
 
-inline void fillBlock(uint8_t* input, int16_t* dst){
+void fillBlock(uint8_t* input, int16_t* dst){
     int i,j;
     for(i=0; i<8; i++){
         for(j=0; j<8; j++){
@@ -53,7 +53,7 @@ inline void fillBlock(uint8_t* input, int16_t* dst){
     }
 }
 
-inline void addDeltas(int16_t* deltas, uint8_t *ref, uint8_t* input){
+void addDeltas(int16_t* deltas, uint8_t *ref, uint8_t* input){
    for(int k=0; k<8; k++){
         for(int l=0; l<8; l++){
 
@@ -108,6 +108,7 @@ int itra_dec(uint8_t* current, uint8_t* reference, int16_t* deltablock, int trig
     }
     deltablock-=64;
     int vard = var(deltablock);
+//    printf("%d\n", vard);
     return (varc <= vard ? 1 : 0);
 }
 
@@ -285,7 +286,7 @@ for(d = 0; d < 256; d++)
     	int a;
         for(a=0; a<WIDTH*HEIGHT; a++)
             out_final[a] = (uint8_t)out_dec[a];
-SDL_Delay(40);
+SDL_Delay(30);
  	render(data_sf);
 #ifdef WRITE
     
