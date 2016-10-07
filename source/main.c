@@ -14,7 +14,8 @@
 #define FPS (120)
 
 #define MAX_PCHAIN (10)
-
+//#define DEBUG
+//#define DEBUG_DELTA
 //#define WRITE
 
 #if 0
@@ -67,7 +68,7 @@ void addDeltas(int16_t* deltas, uint8_t *ref, uint8_t* input){
             }
             deltas++;
             input++;
-        }
+}
  //       printf("\n");
         input += WIDTH-8;
         ref += WIDTH-8;
@@ -77,7 +78,7 @@ void addDeltas(int16_t* deltas, uint8_t *ref, uint8_t* input){
 
 
 int itra_dec(uint8_t* current, uint8_t* reference, int16_t* deltablock, int trigger){
-    //return 1;
+   // return 1;
     int16_t tmp[64];
     fillBlock(current, tmp);
     int varc = var(tmp);
@@ -108,7 +109,7 @@ int itra_dec(uint8_t* current, uint8_t* reference, int16_t* deltablock, int trig
     }
     deltablock-=64;
     int vard = var(deltablock);
-//    printf("%d\n", vard);
+//    printf("%d vs %d\n", varc, vard);
     return (varc <= vard ? 1 : 0);
 }
 
@@ -240,11 +241,26 @@ for(d = 0; d < 256; d++)
                 }
                 // inter code
                 else{
+#ifdef DEBUG			
+#endif	
                     pcount--;
                     waspcoded = 1;
-                    fwht16(deltablock, output, 0, WIDTH, 0);
+#ifdef DEBUG_DELTA
+		    if(i==98 && j == 49){
+
+			printf("pframe @ (%d, %d)\n", i,j);
+		    	printf("delta is:\n");
+			int d;
+			for(d=0; d<64; d++){
+				printf("%d,", deltablock[d]);
+			}
+			printf("\n");
+
+		    }
+#endif
+                    fwht16(deltablock, output, 8, WIDTH, 0);
+
                 }
-              
                 int ret = rlc(output, rlco, WIDTH, iframe ? 0 : 1);               
                 // decompress freshly coded coefficients
                 int stat = derlc(rlco, derlco, WIDTH);
@@ -286,14 +302,12 @@ for(d = 0; d < 256; d++)
     	int a;
         for(a=0; a<WIDTH*HEIGHT; a++)
             out_final[a] = (uint8_t)out_dec[a];
-SDL_Delay(30);
+//SDL_Delay(10);
  	render(data_sf);
 #ifdef WRITE
-    
-
-            fwrite(out_final, 1, sizeof(uint8_t)*WIDTH*HEIGHT, fp2);
+            fwrite(out_dec, 1, sizeof(uint16_t)*WIDTH*HEIGHT, fp2);
 #endif 
-            uint16_t* swp = reference;
+            uint8_t* swp = reference;
             reference = frm.lum;
            frm.lum = swp;
     } 

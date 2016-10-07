@@ -1,5 +1,6 @@
 #include "fwht.h"
 #include <stdio.h>
+#include "quant.h"
 /*
  * 8x8 Fast Walsh Hadamard Transform in sequency order
  * based on the paper:
@@ -82,16 +83,20 @@ void fwht(uint8_t* block, int16_t* output_block, int istride, int ostride, int i
         workspace2[5] = workspace1[4] - workspace1[6];
         workspace2[6] = workspace1[5] - workspace1[7];
         workspace2[7] = workspace1[5] + workspace1[7];
-        int inter = intra ? 0 : 1;
         // stage 3
-        out[0*ostride] = (workspace2[0] + workspace2[4])>>(QUANT+inter);
-        out[1*ostride] = (workspace2[0] - workspace2[4])>>(QUANT+inter);
-        out[2*ostride] = (workspace2[1] - workspace2[5])>>(QUANT+inter);
-        out[3*ostride] = (workspace2[1] + workspace2[5])>>(QUANT+inter);
-        out[4*ostride] = (workspace2[2] + workspace2[6])>>(QUANT+inter);
-        out[5*ostride] = (workspace2[2] - workspace2[6])>>(QUANT+inter);
-        out[6*ostride] = (workspace2[3] - workspace2[7])>>(QUANT+inter);
-        out[7*ostride] = (workspace2[3] + workspace2[7])>>(QUANT+inter);
+	// TODO: remove fugly intra/inter dependency
+
+	out[0*ostride] = (workspace2[0] + workspace2[4]);//>>(QUANT);
+
+        out[1*ostride] = (workspace2[0] - workspace2[4]);//>>(QUANT);
+        out[2*ostride] = (workspace2[1] - workspace2[5]);//>>(QUANT);
+        out[3*ostride] = (workspace2[1] + workspace2[5]);//>>(QUANT);
+        out[4*ostride] = (workspace2[2] + workspace2[6]);//>>(QUANT);
+        out[5*ostride] = (workspace2[2] - workspace2[6]);//>>(QUANT);
+        out[6*ostride] = (workspace2[3] - workspace2[7]);//>>(QUANT);
+        out[7*ostride] = (workspace2[3] + workspace2[7]);//>>(QUANT);
+
+	quantize(out, ostride);
     }
 }
 
@@ -190,15 +195,49 @@ void ifwht(int16_t* block, int16_t* output_block, int istride, int ostride, int 
         workspace2[7] = workspace1[5] + workspace1[7];
         int inter = intra ? 0 : 1;
         // stage 3
-        out[0*ostride] = 128*intra+((workspace2[0] + workspace2[4])>>(6-QUANT-inter));
-        out[1*ostride] = 128*intra+((workspace2[0] - workspace2[4])>>(6-QUANT-inter));
-        out[2*ostride] = 128*intra+((workspace2[1] - workspace2[5])>>(6-QUANT-inter));
-        out[3*ostride] = 128*intra+((workspace2[1] + workspace2[5])>>(6-QUANT-inter));
-        out[4*ostride] = 128*intra+((workspace2[2] + workspace2[6])>>(6-QUANT-inter));
-        out[5*ostride] = 128*intra+((workspace2[2] - workspace2[6])>>(6-QUANT-inter));
-        out[6*ostride] = 128*intra+((workspace2[3] - workspace2[7])>>(6-QUANT-inter));
-        out[7*ostride] = 128*intra+((workspace2[3] + workspace2[7])>>(6-QUANT-inter));
-        
+#if 0	
+	out[0*ostride] = 128*intra+((workspace2[0] + workspace2[4])>>6);
+        out[1*ostride] = 128*intra+((workspace2[0] - workspace2[4])>>6);
+        out[2*ostride] = 128*intra+((workspace2[1] - workspace2[5])>>6);
+        out[3*ostride] = 128*intra+((workspace2[1] + workspace2[5])>>6);
+        out[4*ostride] = 128*intra+((workspace2[2] + workspace2[6])>>6);
+        out[5*ostride] = 128*intra+((workspace2[2] - workspace2[6])>>6);
+        out[6*ostride] = 128*intra+((workspace2[3] - workspace2[7])>>6);
+        out[7*ostride] = 128*intra+((workspace2[3] + workspace2[7])>>6);
+#endif
+	if(inter){
+	   out[0*ostride] = 128*intra+((workspace2[0] + workspace2[4])>>(6-QUANT-inter));
+	           out[1*ostride] = 128*intra+((workspace2[0] - workspace2[4])>>(6-QUANT-inter));
+		           out[2*ostride] = 128*intra+((workspace2[1] - workspace2[5])>>(6-QUANT-inter));
+			           out[3*ostride] = 128*intra+((workspace2[1] + workspace2[5])>>(6-QUANT-inter));
+				           out[4*ostride] = 128*intra+((workspace2[2] + workspace2[6])>>(6-QUANT-inter));
+					           out[5*ostride] = 128*intra+((workspace2[2] - workspace2[6])>>(6-QUANT-inter));
+						           out[6*ostride] = 128*intra+((workspace2[3] - workspace2[7])>>(6-QUANT-inter));
+							           out[7*ostride] = 128*intra+((workspace2[3] + workspace2[7])>>(6-QUANT-inter));
+	}
+//#if 0
+	else{
+		out[0*ostride] = ((workspace2[0] + workspace2[4]));
+	        out[1*ostride] = ((workspace2[0] - workspace2[4]));
+	        out[2*ostride] = ((workspace2[1] - workspace2[5]));
+        	out[3*ostride] = ((workspace2[1] + workspace2[5]));
+	        out[4*ostride] = ((workspace2[2] + workspace2[6]));
+        	out[5*ostride] = ((workspace2[2] - workspace2[6]));
+	        out[6*ostride] = ((workspace2[3] - workspace2[7]));
+        	out[7*ostride] = ((workspace2[3] + workspace2[7]));
+
+		dequantize(out, ostride);
+		int d;
+		for(d=0; d<8; d++){
+			out[ostride*d] >>= 6;
+			out[ostride*d] += 128;
+		}
+
+
+
+	}
+
+//#endif
 #ifdef DEBUG
         for(x=0; x<8; x++)
             printf("%d,", out[i*ostride]);
@@ -285,14 +324,16 @@ void fwht16(int16_t* block, int16_t* output_block, int istride, int ostride, int
         workspace2[7] = workspace1[5] + workspace1[7];
         int inter = intra ? 0 : 1;
         // stage 3
-        out[0*ostride] = (workspace2[0] + workspace2[4])>>(QUANT+inter);
-        out[1*ostride] = (workspace2[0] - workspace2[4])>>(QUANT+inter);
-        out[2*ostride] = (workspace2[1] - workspace2[5])>>(QUANT+inter);
-        out[3*ostride] = (workspace2[1] + workspace2[5])>>(QUANT+inter);
-        out[4*ostride] = (workspace2[2] + workspace2[6])>>(QUANT+inter);
-        out[5*ostride] = (workspace2[2] - workspace2[6])>>(QUANT+inter);
-        out[6*ostride] = (workspace2[3] - workspace2[7])>>(QUANT+inter);
-        out[7*ostride] = (workspace2[3] + workspace2[7])>>(QUANT+inter);
+
+        out[0*ostride] = (workspace2[0] + workspace2[4]);//>>(QUANT+inter);
+        out[1*ostride] = (workspace2[0] - workspace2[4]);//>>(QUANT+inter);
+        out[2*ostride] = (workspace2[1] - workspace2[5]);//>>(QUANT+inter);
+        out[3*ostride] = (workspace2[1] + workspace2[5]);//>>(QUANT+inter);
+        out[4*ostride] = (workspace2[2] + workspace2[6]);//>>(QUANT+inter);
+        out[5*ostride] = (workspace2[2] - workspace2[6]);//>>(QUANT+inter);
+        out[6*ostride] = (workspace2[3] - workspace2[7]);//>>(QUANT+inter);
+        out[7*ostride] = (workspace2[3] + workspace2[7]);//>>(QUANT+inter);
+	deadzone_quant(out, ostride);
     }
 }
 
