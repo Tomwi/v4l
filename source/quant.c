@@ -13,6 +13,20 @@ const int QUANT_TABLE[] = {
 
 };
 
+
+const int QUANT_TABLE_P[] = {
+	3, 3, 3, 3, 3, 3,  3,  3,
+	3, 3, 3, 3, 3, 3,  3,  3,
+	3, 3, 3, 3, 3, 3,  3,  6,
+	3, 3, 3, 3, 3, 3,  6,  6,
+	3, 3, 3, 3, 3, 6,  6,  6,
+	3, 3, 3, 3, 6, 6,  6,  6,
+	3, 3, 3, 6, 6, 6,  6,  6,
+	3, 3, 6, 6, 6, 6,  6,  6,
+
+};
+
+
 void quantize(int16_t* coeff, int stride){
 	int* quant = QUANT_TABLE;
 	int i;

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <SDL/SDL.h>
+#include <SDL_thread.h>
 #include <assert.h>
 
 #include "fwht.h"
@@ -11,7 +12,7 @@
 
 #define WIDTH (1280)
 #define HEIGHT (720)
-#define FPS (120)
+#define FPS (900)
 
 #define MAX_PCHAIN (10)
 //#define DEBUG
@@ -163,7 +164,7 @@ int main(int argc, char** argv){
 
 	 (void)argc, (void)argv;
     static uint8_t buffer[WIDTH * HEIGHT * 3];
-
+#if 0
     _Bool ok =
         init_app("V4L WHT CODEC", NULL, SDL_INIT_VIDEO);
 
@@ -187,6 +188,27 @@ for(d = 0; d < 256; d++)
 
 	SDL_SetPalette(screen, SDL_LOGPAL|SDL_PHYSPAL, colors, 0, 256);
     SDL_SetEventFilter(filter);
+#else
+
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
+	      fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
+	        exit(1);
+    }
+
+SDL_Surface *screen;
+
+screen = SDL_SetVideoMode(WIDTH, HEIGHT, 0, 0);
+if(!screen) {
+	  fprintf(stderr, "SDL: could not set video mode - exiting\n");
+	    exit(1);
+}
+SDL_Overlay     *bmp = NULL;
+
+bmp = SDL_CreateYUVOverlay(WIDTH, HEIGHT,
+		                           SDL_YV12_OVERLAY, screen);
+printf("%d %d %d\n", bmp->pitches[0], bmp->pitches[1], bmp->pitches[2]);
+#endif
+
 
     FRAME frm;
 
@@ -303,7 +325,21 @@ for(d = 0; d < 256; d++)
         for(a=0; a<WIDTH*HEIGHT; a++)
             out_final[a] = (uint8_t)out_dec[a];
 //SDL_Delay(10);
- 	render(data_sf);
+SDL_Rect rect;
+
+	SDL_LockYUVOverlay(bmp);                      	         
+	memcpy(bmp->pixels[0], out_final, WIDTH*HEIGHT);
+	memcpy(bmp->pixels[2], frm.chrm, WIDTH*HEIGHT/4);
+	memcpy(bmp->pixels[1], frm.chrm+WIDTH*HEIGHT/4, WIDTH*HEIGHT/4);
+
+	SDL_UnlockYUVOverlay(bmp);
+
+	rect.x = 0;
+	rect.y = 0;
+	rect.w = WIDTH;
+	rect.h = HEIGHT;
+	SDL_DisplayYUVOverlay(bmp, &rect);
+// 	render(data_sf);
 #ifdef WRITE
             fwrite(out_dec, 1, sizeof(uint16_t)*WIDTH*HEIGHT, fp2);
 #endif 
