@@ -12,7 +12,7 @@
 
 #include "params.h"
 
-#define FPS (120)
+#define FPS (940)
 
 #define MAX_PCHAIN (10)
 //#define DEBUG
@@ -113,7 +113,7 @@ int main(int argc, char** argv){
                  int waspcoded_chrm = 0;
 #if 1
                  for(j=0; j<HEIGHT/8; j++) {
-                         for(i=0; i<(WIDTH/2)/8; i++) {
+                         for(i=0; i<WIDTH/2/8; i++) {
                                 int iframe;
                                 if((iframe=itra_dec(input, out_final_chrm+(int)(input-frm.chrm), deltablock, WIDTH/2)) || k==0 || pchain_chrm == MAX_PCHAIN) {
                                         iframe = 1;
@@ -161,9 +161,13 @@ int main(int argc, char** argv){
                 /* Increase pchain count */
                 if(waspcoded_chrm)
                         pchain_chrm++;
-                        printf("Compression ratio chroma %lf \% \n",
-                               ((float)(WIDTH*HEIGHT/2))/((unsigned long)rlco - (unsigned long)out_rlc_chrm)*100);
+                        printf("Compression ratio chroma %lf %p %p %d %d \n",
+                               ((float)(WIDTH*HEIGHT/2))/((unsigned long)rlco - (unsigned long)out_rlc_chrm)*100, rlco, out_rlc_chrm, 2*(rlco-out_rlc_chrm), WIDTH*HEIGHT/2);
 #if 1
+
+#ifdef WRITE
+                fwrite(out_rlc_chrm, 1, sizeof(uint16_t)*(rlco - out_rlc_chrm), fp2);
+#endif
                 /*
                  *  ENCODE INTER frame
                  */
@@ -225,6 +229,10 @@ int main(int argc, char** argv){
                         pchain++;
                 printf("Compression ratio luma %lf \% \n",
                        ((float)(WIDTH*HEIGHT))/((unsigned long)rlco - (unsigned long)out_rlc)*100);
+
+                        #ifdef WRITE
+                                        fwrite(out_rlc, 1, ((unsigned long)rlco - (unsigned long)out_rlc), fp2);
+                        #endif
                 int a;
                 for(a=0; a<WIDTH*HEIGHT; a++)
                         out_final[a] = (uint8_t)out_dec[a];
@@ -247,9 +255,6 @@ int main(int argc, char** argv){
                 rect.h = HEIGHT;
                 SDL_DisplayYUVOverlay(bmp, &rect);
                 //getchar();
-#ifdef WRITE
-                fwrite(out_dec, 1, sizeof(uint16_t)*WIDTH*HEIGHT, fp2);
-#endif
         }
         diff = clock() - start;
 

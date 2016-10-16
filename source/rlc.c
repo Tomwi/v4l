@@ -37,7 +37,7 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
         for(y=0; y<8; y++) {
                 for(x=0; x<8; x++) {
                         *wp = in[x+y*stride];
-
+                        //printf("wp = %d\n", *wp);
                         if(*wp==0) {
 
                                 lastzero_run++;
@@ -65,12 +65,17 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
                         }
                 }
                 // 4 bits for run, 12 for coefficient (quantization by 4)
-                *output++ = cnt | tmp << 4;
+                *output++ = (cnt | tmp << 4);
+                //printf("%x\n", output[-1]);
                 i++;
                 ret++;
         }
-        if(lastzero_run > 14)
-                *output = ALL_ZEROS | 0;
+        if(lastzero_run > 14){
+                *output = (ALL_ZEROS | 0);
+                //printf("%x\n", *output);
+              }
+              ret++;
+          //    printf("ret %d\n", ret);
         return ret;
 }
 

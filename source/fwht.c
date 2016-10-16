@@ -206,14 +206,19 @@ void ifwht(int16_t* block, int16_t* output_block, int istride, int ostride, int 
                 out[7*ostride] = 128*intra+((workspace2[3] + workspace2[7])>>6);
 #endif
                 if(inter) {
-                        out[0*ostride] = 128*intra+((workspace2[0] + workspace2[4])>>(6-QUANT-inter));
-                        out[1*ostride] = 128*intra+((workspace2[0] - workspace2[4])>>(6-QUANT-inter));
-                        out[2*ostride] = 128*intra+((workspace2[1] - workspace2[5])>>(6-QUANT-inter));
-                        out[3*ostride] = 128*intra+((workspace2[1] + workspace2[5])>>(6-QUANT-inter));
-                        out[4*ostride] = 128*intra+((workspace2[2] + workspace2[6])>>(6-QUANT-inter));
-                        out[5*ostride] = 128*intra+((workspace2[2] - workspace2[6])>>(6-QUANT-inter));
-                        out[6*ostride] = 128*intra+((workspace2[3] - workspace2[7])>>(6-QUANT-inter));
-                        out[7*ostride] = 128*intra+((workspace2[3] + workspace2[7])>>(6-QUANT-inter));
+                        out[0*ostride] = ((workspace2[0] + workspace2[4]));//>>(6-QUANT-inter));
+                        out[1*ostride] = ((workspace2[0] - workspace2[4]));//>>(6-QUANT-inter));
+                        out[2*ostride] = ((workspace2[1] - workspace2[5]));//>>(6-QUANT-inter));
+                        out[3*ostride] = ((workspace2[1] + workspace2[5]));//>>(6-QUANT-inter));
+                        out[4*ostride] = ((workspace2[2] + workspace2[6]));//>>(6-QUANT-inter));
+                        out[5*ostride] = ((workspace2[2] - workspace2[6]));//>>(6-QUANT-inter));
+                        out[6*ostride] = ((workspace2[3] - workspace2[7]));//>>(6-QUANT-inter));
+                        out[7*ostride] = ((workspace2[3] + workspace2[7]));//>>(6-QUANT-inter));
+                        dequantizep(out, ostride);
+                        int d;
+                        for(d=0; d<8; d++) {
+                                out[ostride*d] >>= 6;
+                        }
                 }
 //#if 0
                 else{
