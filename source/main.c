@@ -161,7 +161,8 @@ int main(int argc, char** argv){
                 /* Increase pchain count */
                 if(waspcoded_chrm)
                         pchain_chrm++;
-
+                        printf("Compression ratio chroma %lf \% \n",
+                               ((float)(WIDTH*HEIGHT/2))/((unsigned long)rlco - (unsigned long)out_rlc_chrm)*100);
 #if 1
                 /*
                  *  ENCODE INTER frame
@@ -222,8 +223,8 @@ int main(int argc, char** argv){
                 /* Increase pchain count */
                 if(waspcoded)
                         pchain++;
-                printf("Compression ratio %lf \% \n",
-                       ((float)(WIDTH*HEIGHT))/(rlco - out_rlc)*100);
+                printf("Compression ratio luma %lf \% \n",
+                       ((float)(WIDTH*HEIGHT))/((unsigned long)rlco - (unsigned long)out_rlc)*100);
                 int a;
                 for(a=0; a<WIDTH*HEIGHT; a++)
                         out_final[a] = (uint8_t)out_dec[a];
