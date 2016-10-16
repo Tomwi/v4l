@@ -32,7 +32,8 @@ void quantize(int16_t* coeff, int stride){
 	int i;
 	int16_t* tmp = coeff;
 	for(i=0; i<8; i++){
-		*tmp >>= *quant++;
+		*tmp >>= (*quant);
+		quant++;
 		if(*tmp >= -10 && *tmp <= 10)
 			*tmp = 0;
 
@@ -56,7 +57,8 @@ void dequantize(int16_t* coeff, int stride){
 	int i;
 	int16_t* tmp = coeff;
 	for(i=0; i<8; i++){
-		*tmp <<= *quant++;
+		*tmp <<= (*quant);
+			quant++;
 		tmp += stride;
 	}
 
