@@ -44,8 +44,6 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
                         }
                         else
                                 lastzero_run = 0;
-
-                              //  printf("lastrun %d\n", lastzero_run);
                         wp++;
                 }
         }
@@ -68,12 +66,11 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
                 }
                 // 4 bits for run, 12 for coefficient (quantization by 4)
                 *output++ = cnt | tmp << 4;
-                //printf("encoded %d\n", cnt);
                 i++;
                 ret++;
         }
         if(lastzero_run > 14)
-          *output = ALL_ZEROS | 0;
+                *output = ALL_ZEROS | 0;
         return ret;
 }
 
@@ -89,11 +86,9 @@ int derlc(int16_t* rlc_in, int16_t* dwht_out, int stride){
         // Now de-compress
         while(dec_count != 8*8) {
                 int length = *rlc_in & 0xF;
-            //    printf("length found %d\n", length);
                 int coeff  = (*rlc_in++) >> 4;
                 // fill rest with zeros
                 if(length == 15) {
-              //        printf("special rlc symbol %d!\n", 64-dec_count);
                         for(i=0; i<(64-dec_count); i++) {
                                 *wp++ = 0;
                         }

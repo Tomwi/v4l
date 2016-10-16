@@ -4,7 +4,7 @@ int init_nv12_frame(const unsigned int width, const unsigned int height, FRAME* 
         frm->width = width;
         frm->height = height;
         frm->lum = malloc(sizeof(uint8_t)*width*height);
-        frm->chrm = malloc(sizeof(uint8_t)*width*height);
+        frm->chrm = malloc(sizeof(uint8_t)*width*height/2);
         if(frm->lum == NULL) {
                 if(frm->chrm != NULL)
                         free(frm->chrm);
