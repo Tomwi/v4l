@@ -2,6 +2,7 @@
 
 //#define DEBUG
 
+#define ALL_ZEROS (15)
 
 uint8_t zigzag[64] = {
         0,
@@ -31,33 +32,48 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
 
         int16_t* wp = block;
 
+        // read in block zig-zag-wise
+        int lastzero_run = 0;
         for(y=0; y<8; y++) {
                 for(x=0; x<8; x++) {
-                        *wp++ = in[x+y*stride];
+                        *wp = in[x+y*stride];
+
+                        if(*wp==0) {
+
+                                lastzero_run++;
+                        }
+                        else
+                                lastzero_run = 0;
+
+                              //  printf("lastrun %d\n", lastzero_run);
+                        wp++;
                 }
         }
 
         *output++ = (pframe ? PFRAME_BIT : 0);
-//    printf("encoding p-block %d\n", pframe ? PFRAME_BIT : 0);
         ret++;
 
-        while(i < 64) {
+        int to_encode = 8*8 -(lastzero_run > 14 ? lastzero_run : 0);
+        while(i < to_encode) {
                 int cnt = 0;
                 int tmp;
                 // count leading zeros
-                while((tmp=block[zigzag[i]]) == 0 && cnt < 15) {
+                while((tmp=block[zigzag[i]]) == 0 && cnt < 14) {
                         cnt++;
                         i++;
-                        if(i == 64) {
+                        if(i == to_encode) {
                                 cnt--;
                                 break;
                         }
                 }
                 // 4 bits for run, 12 for coefficient (quantization by 4)
                 *output++ = cnt | tmp << 4;
+                //printf("encoded %d\n", cnt);
                 i++;
                 ret++;
         }
+        if(lastzero_run > 14)
+          *output = ALL_ZEROS | 0;
         return ret;
 }
 
@@ -73,11 +89,23 @@ int derlc(int16_t* rlc_in, int16_t* dwht_out, int stride){
         // Now de-compress
         while(dec_count != 8*8) {
                 int length = *rlc_in & 0xF;
+            //    printf("length found %d\n", length);
                 int coeff  = (*rlc_in++) >> 4;
-                for(i=0; i<length; i++, dec_count++)
-                        *wp++ = 0;
-                *wp++ = coeff;
-                dec_count++;
+                // fill rest with zeros
+                if(length == 15) {
+              //        printf("special rlc symbol %d!\n", 64-dec_count);
+                        for(i=0; i<(64-dec_count); i++) {
+                                *wp++ = 0;
+                        }
+                        break;
+                }
+                else{
+
+                        for(i=0; i<length; i++, dec_count++)
+                                *wp++ = 0;
+                        *wp++ = coeff;
+                        dec_count++;
+                }
         }
 
         wp = block;
