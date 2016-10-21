@@ -73,7 +73,6 @@ void encodeFrame(RAW_FRAME* frm, uint8_t* lref, uint8_t* cref, CFRAME* out){
 
                         }
                         else{
-                                //  blocktype = PBLOCK;
                                 waspcoded_chrm = 1;
                                 fwht16(deltablock, coeffs, 8, WIDTH/2, 0);
 
@@ -119,7 +118,6 @@ void encodeFrame(RAW_FRAME* frm, uint8_t* lref, uint8_t* cref, CFRAME* out){
                                 fwht16(deltablock, coeffs, 8, frm->width, 0);
                         }
                         int ret = rlc(coeffs, rlco, frm->width, blocktype);
-                        /* Update rlc output block-pointers */
                         rlco += ret;
                         coeffs += 8;
                         input += 8;

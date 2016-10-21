@@ -12,7 +12,7 @@
 
 #include "params.h"
 
-#define FPS (100)
+#define FPS (900)
 
 int16_t chroma[WIDTH*HEIGHT/2], luminance[WIDTH*HEIGHT];
 int8_t chroma_8bit[WIDTH*HEIGHT/2], luminance_8bit[WIDTH*HEIGHT];
@@ -89,7 +89,7 @@ int main(int argc, char** argv){
                 rect.y = 0;
                 rect.w = WIDTH;
                 rect.h = HEIGHT;
-                SDL_DisplayYUVOverlay(bmp, &rect);        
+                SDL_DisplayYUVOverlay(bmp, &rect);
 
         }
         diff = clock() - start;

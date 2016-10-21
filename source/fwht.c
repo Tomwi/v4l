@@ -86,15 +86,15 @@ void fwht(uint8_t* block, int16_t* output_block, int istride, int ostride, int i
                 // stage 3
                 // TODO: remove fugly intra/inter dependency
 
-                out[0*ostride] = (workspace2[0] + workspace2[4]);//>>(QUANT);
+                out[0*ostride] = (workspace2[0] + workspace2[4]); //>>(QUANT);
 
-                out[1*ostride] = (workspace2[0] - workspace2[4]);//>>(QUANT);
-                out[2*ostride] = (workspace2[1] - workspace2[5]);//>>(QUANT);
-                out[3*ostride] = (workspace2[1] + workspace2[5]);//>>(QUANT);
-                out[4*ostride] = (workspace2[2] + workspace2[6]);//>>(QUANT);
-                out[5*ostride] = (workspace2[2] - workspace2[6]);//>>(QUANT);
-                out[6*ostride] = (workspace2[3] - workspace2[7]);//>>(QUANT);
-                out[7*ostride] = (workspace2[3] + workspace2[7]);//>>(QUANT);
+                out[1*ostride] = (workspace2[0] - workspace2[4]); //>>(QUANT);
+                out[2*ostride] = (workspace2[1] - workspace2[5]); //>>(QUANT);
+                out[3*ostride] = (workspace2[1] + workspace2[5]); //>>(QUANT);
+                out[4*ostride] = (workspace2[2] + workspace2[6]); //>>(QUANT);
+                out[5*ostride] = (workspace2[2] - workspace2[6]); //>>(QUANT);
+                out[6*ostride] = (workspace2[3] - workspace2[7]); //>>(QUANT);
+                out[7*ostride] = (workspace2[3] + workspace2[7]); //>>(QUANT);
 
                 quantize(out, ostride);
         }
@@ -206,14 +206,14 @@ void ifwht(int16_t* block, int16_t* output_block, int istride, int ostride, int 
                 out[7*ostride] = 128*intra+((workspace2[3] + workspace2[7])>>6);
 #endif
                 if(inter) {
-                        out[0*ostride] = ((workspace2[0] + workspace2[4]));//>>(6-QUANT-inter));
-                        out[1*ostride] = ((workspace2[0] - workspace2[4]));//>>(6-QUANT-inter));
-                        out[2*ostride] = ((workspace2[1] - workspace2[5]));//>>(6-QUANT-inter));
-                        out[3*ostride] = ((workspace2[1] + workspace2[5]));//>>(6-QUANT-inter));
-                        out[4*ostride] = ((workspace2[2] + workspace2[6]));//>>(6-QUANT-inter));
-                        out[5*ostride] = ((workspace2[2] - workspace2[6]));//>>(6-QUANT-inter));
-                        out[6*ostride] = ((workspace2[3] - workspace2[7]));//>>(6-QUANT-inter));
-                        out[7*ostride] = ((workspace2[3] + workspace2[7]));//>>(6-QUANT-inter));
+                        out[0*ostride] = ((workspace2[0] + workspace2[4])); //>>(6-QUANT-inter));
+                        out[1*ostride] = ((workspace2[0] - workspace2[4])); //>>(6-QUANT-inter));
+                        out[2*ostride] = ((workspace2[1] - workspace2[5])); //>>(6-QUANT-inter));
+                        out[3*ostride] = ((workspace2[1] + workspace2[5])); //>>(6-QUANT-inter));
+                        out[4*ostride] = ((workspace2[2] + workspace2[6])); //>>(6-QUANT-inter));
+                        out[5*ostride] = ((workspace2[2] - workspace2[6])); //>>(6-QUANT-inter));
+                        out[6*ostride] = ((workspace2[3] - workspace2[7])); //>>(6-QUANT-inter));
+                        out[7*ostride] = ((workspace2[3] + workspace2[7])); //>>(6-QUANT-inter));
                         dequantizep(out, ostride);
                         int d;
                         for(d=0; d<8; d++) {
@@ -330,14 +330,14 @@ void fwht16(int16_t* block, int16_t* output_block, int istride, int ostride, int
                 int inter = intra ? 0 : 1;
                 // stage 3
 
-                out[0*ostride] = (workspace2[0] + workspace2[4]);//>>(QUANT+inter);
-                out[1*ostride] = (workspace2[0] - workspace2[4]);//>>(QUANT+inter);
-                out[2*ostride] = (workspace2[1] - workspace2[5]);//>>(QUANT+inter);
-                out[3*ostride] = (workspace2[1] + workspace2[5]);//>>(QUANT+inter);
-                out[4*ostride] = (workspace2[2] + workspace2[6]);//>>(QUANT+inter);
-                out[5*ostride] = (workspace2[2] - workspace2[6]);//>>(QUANT+inter);
-                out[6*ostride] = (workspace2[3] - workspace2[7]);//>>(QUANT+inter);
-                out[7*ostride] = (workspace2[3] + workspace2[7]);//>>(QUANT+inter);
+                out[0*ostride] = (workspace2[0] + workspace2[4]); //>>(QUANT+inter);
+                out[1*ostride] = (workspace2[0] - workspace2[4]); //>>(QUANT+inter);
+                out[2*ostride] = (workspace2[1] - workspace2[5]); //>>(QUANT+inter);
+                out[3*ostride] = (workspace2[1] + workspace2[5]); //>>(QUANT+inter);
+                out[4*ostride] = (workspace2[2] + workspace2[6]); //>>(QUANT+inter);
+                out[5*ostride] = (workspace2[2] - workspace2[6]); //>>(QUANT+inter);
+                out[6*ostride] = (workspace2[3] - workspace2[7]); //>>(QUANT+inter);
+                out[7*ostride] = (workspace2[3] + workspace2[7]); //>>(QUANT+inter);
                 deadzone_quant(out, ostride);
         }
 }

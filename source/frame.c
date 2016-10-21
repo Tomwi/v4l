@@ -74,3 +74,8 @@ int readCFrame(FILE* fp, CFRAME* out){
         /* TODO: implement frame header */
         return 1;
 }
+
+void writeCFrame(CFRAME* frm, FILE* fp){
+        //fwrite(fp, )
+
+}
