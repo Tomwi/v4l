@@ -54,3 +54,7 @@
 *.out
 *.pdf
 *.toc
+
+source/codec
+octave-workspace
+build/
