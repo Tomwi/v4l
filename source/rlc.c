@@ -1,6 +1,5 @@
 #include "rlc.h"
-
-//#define DEBUG
+#include "frame.h"
 
 #define ALL_ZEROS (15)
 
@@ -23,7 +22,7 @@ uint8_t zigzag[64] = {
 };
 
 
-int rlc(int16_t* in, int16_t* output, int stride, int pframe){
+int rlc(int16_t* in, int16_t* output, int stride, int blocktype){
 
         int i = 0;
         int ret = 0;
@@ -37,7 +36,6 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
         for(y=0; y<8; y++) {
                 for(x=0; x<8; x++) {
                         *wp = in[x+y*stride];
-                        //printf("wp = %d\n", *wp);
                         if(*wp==0) {
 
                                 lastzero_run++;
@@ -48,7 +46,7 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
                 }
         }
 
-        *output++ = (pframe ? PFRAME_BIT : 0);
+        *output++ = (blocktype == PBLOCK ? PFRAME_BIT : 0);
         ret++;
 
         int to_encode = 8*8 -(lastzero_run > 14 ? lastzero_run : 0);
@@ -66,23 +64,22 @@ int rlc(int16_t* in, int16_t* output, int stride, int pframe){
                 }
                 // 4 bits for run, 12 for coefficient (quantization by 4)
                 *output++ = (cnt | tmp << 4);
-                //printf("%x\n", output[-1]);
                 i++;
                 ret++;
         }
-        if(lastzero_run > 14){
+        if(lastzero_run > 14) {
                 *output = (ALL_ZEROS | 0);
-                //printf("%x\n", *output);
-              }
-              ret++;
-          //    printf("ret %d\n", ret);
+                ret++;
+        }
+
         return ret;
 }
 
 
-int derlc(int16_t* rlc_in, int16_t* dwht_out, int stride){
+int derlc(int16_t** rlc_in, int16_t* dwht_out, int stride){
         // header
-        int16_t ret = *rlc_in++;
+        int16_t* input = *rlc_in;
+        int16_t ret = *input++;
         int dec_count = 0;
 
         int16_t block[8*8];
@@ -90,8 +87,9 @@ int derlc(int16_t* rlc_in, int16_t* dwht_out, int stride){
         int i,j;
         // Now de-compress
         while(dec_count != 8*8) {
-                int length = *rlc_in & 0xF;
-                int coeff  = (*rlc_in++) >> 4;
+
+                int length = *input & 0xF;
+                int coeff  = (*input++) >> 4;
                 // fill rest with zeros
                 if(length == 15) {
                         for(i=0; i<(64-dec_count); i++) {
@@ -108,6 +106,8 @@ int derlc(int16_t* rlc_in, int16_t* dwht_out, int stride){
                 }
         }
 
+        int length = *input & 0xF;
+        int coeff  = (*input) >> 4;
         wp = block;
 
         for(i=0; i<64; i++) {
@@ -116,6 +116,6 @@ int derlc(int16_t* rlc_in, int16_t* dwht_out, int stride){
                 int x = pos%8;
                 dwht_out[x + y*stride] = *wp++;
         }
-
+        *rlc_in = input;
         return ret;
 }

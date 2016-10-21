@@ -2,9 +2,9 @@ project(codec)
 
 cmake_minimum_required(VERSION 2.8)
 
-add_executable(${PROJECT_NAME} main.c fwht.c nv12.c rlc.c encoder.c quant.c decoder.c)
+add_executable(${PROJECT_NAME} main.c fwht.c frame.c rlc.c encoder.c quant.c decoder.c)
 
-set(CMAKE_C_FLAGS "-O3")
+set(CMAKE_C_FLAGS "-O3 -g")
 
 
 find_package (SDL REQUIRED)
