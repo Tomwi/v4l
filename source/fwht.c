@@ -5,7 +5,7 @@
  * 8x8 Fast Walsh Hadamard Transform in sequency order
  * based on the paper:
  * A Recursive Algorithm for Sequency-Ordered Fast Walsh
- * Transforms, R.D. Brown
+ * Transforms, R.D. Brown, 1977
  */
 #define QUANT (2)
 //#define DEBUG
