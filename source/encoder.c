@@ -15,8 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 #include "encoder.h"
+#include "quant.h"
 
 void fillBlock(uint8_t* input, int16_t* dst, int stride){
         int i,j;

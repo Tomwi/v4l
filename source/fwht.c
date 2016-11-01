@@ -21,12 +21,10 @@
  * Transforms, R.D. Brown, 1977
  */
 
-#include "fwht.h"
 #include <stdio.h>
+#include "fwht.h"
 #include "quant.h"
 
-#define QUANT (2)
-//#define DEBUG
 /* TODO: quantize seperately */
 void fwht(uint8_t* block, int16_t* output_block, int istride, int ostride, int intra){
         /* Processes rows */
@@ -102,17 +100,14 @@ void fwht(uint8_t* block, int16_t* output_block, int istride, int ostride, int i
                 workspace2[6] = workspace1[5] - workspace1[7];
                 workspace2[7] = workspace1[5] + workspace1[7];
                 // stage 3
-                // TODO: remove fugly intra/inter dependency
-
-                out[0*ostride] = (workspace2[0] + workspace2[4]); //>>(QUANT);
-
-                out[1*ostride] = (workspace2[0] - workspace2[4]); //>>(QUANT);
-                out[2*ostride] = (workspace2[1] - workspace2[5]); //>>(QUANT);
-                out[3*ostride] = (workspace2[1] + workspace2[5]); //>>(QUANT);
-                out[4*ostride] = (workspace2[2] + workspace2[6]); //>>(QUANT);
-                out[5*ostride] = (workspace2[2] - workspace2[6]); //>>(QUANT);
-                out[6*ostride] = (workspace2[3] - workspace2[7]); //>>(QUANT);
-                out[7*ostride] = (workspace2[3] + workspace2[7]); //>>(QUANT);
+                out[0*ostride] = (workspace2[0] + workspace2[4]);
+                out[1*ostride] = (workspace2[0] - workspace2[4]);
+                out[2*ostride] = (workspace2[1] - workspace2[5]);
+                out[3*ostride] = (workspace2[1] + workspace2[5]);
+                out[4*ostride] = (workspace2[2] + workspace2[6]);
+                out[5*ostride] = (workspace2[2] - workspace2[6]);
+                out[6*ostride] = (workspace2[3] - workspace2[7]);
+                out[7*ostride] = (workspace2[3] + workspace2[7]);
         }
 }
 
@@ -130,12 +125,6 @@ void ifwht(int16_t* block, int16_t* output_block, int istride, int ostride, int 
 
         for(i=0; i<8; i++, tmp += istride, out+=ostride) {
                 // stage 1
-#ifdef DEBUG
-                int x;
-                for(x=0; x<8; x++)
-                        printf("%d,", tmp[x]);
-                printf("\n");
-#endif
                 workspace1[0]  = tmp[0] + tmp[1];
                 workspace1[1]  = tmp[0] - tmp[1];
 
@@ -168,24 +157,11 @@ void ifwht(int16_t* block, int16_t* output_block, int istride, int ostride, int 
                 out[5] = workspace2[2] - workspace2[6];
                 out[6] = workspace2[3] - workspace2[7];
                 out[7] = workspace2[3] + workspace2[7];
-
-#ifdef DEBUG
-                for(x=0; x<8; x++)
-                        printf("%d,", out[x]);
-                printf("\n");
-#endif
-
         }
 
         out = output_block;
 
         for(i=0; i<8; i++, out++) {
- #ifdef DEBUG
-                int x;
-                for(x=0; x<8; x++)
-                        printf("%d,", out[i*ostride]);
-                printf("\n");
-#endif
                 // stage 1
                 workspace1[0]  = out[0] + out[1*ostride];
                 workspace1[1]  = out[0] - out[1*ostride];
@@ -211,32 +187,21 @@ void ifwht(int16_t* block, int16_t* output_block, int istride, int ostride, int 
                 workspace2[7] = workspace1[5] + workspace1[7];
                 int inter = intra ? 0 : 1;
                 // stage 3
-#if 0
-                out[0*ostride] = 128*intra+((workspace2[0] + workspace2[4])>>6);
-                out[1*ostride] = 128*intra+((workspace2[0] - workspace2[4])>>6);
-                out[2*ostride] = 128*intra+((workspace2[1] - workspace2[5])>>6);
-                out[3*ostride] = 128*intra+((workspace2[1] + workspace2[5])>>6);
-                out[4*ostride] = 128*intra+((workspace2[2] + workspace2[6])>>6);
-                out[5*ostride] = 128*intra+((workspace2[2] - workspace2[6])>>6);
-                out[6*ostride] = 128*intra+((workspace2[3] - workspace2[7])>>6);
-                out[7*ostride] = 128*intra+((workspace2[3] + workspace2[7])>>6);
-#endif
                 if(inter) {
-                        out[0*ostride] = ((workspace2[0] + workspace2[4])); //>>(6-QUANT-inter));
-                        out[1*ostride] = ((workspace2[0] - workspace2[4])); //>>(6-QUANT-inter));
-                        out[2*ostride] = ((workspace2[1] - workspace2[5])); //>>(6-QUANT-inter));
-                        out[3*ostride] = ((workspace2[1] + workspace2[5])); //>>(6-QUANT-inter));
-                        out[4*ostride] = ((workspace2[2] + workspace2[6])); //>>(6-QUANT-inter));
-                        out[5*ostride] = ((workspace2[2] - workspace2[6])); //>>(6-QUANT-inter));
-                        out[6*ostride] = ((workspace2[3] - workspace2[7])); //>>(6-QUANT-inter));
-                        out[7*ostride] = ((workspace2[3] + workspace2[7])); //>>(6-QUANT-inter));
+                        out[0*ostride] = ((workspace2[0] + workspace2[4]));
+                        out[1*ostride] = ((workspace2[0] - workspace2[4]));
+                        out[2*ostride] = ((workspace2[1] - workspace2[5]));
+                        out[3*ostride] = ((workspace2[1] + workspace2[5]));
+                        out[4*ostride] = ((workspace2[2] + workspace2[6]));
+                        out[5*ostride] = ((workspace2[2] - workspace2[6]));
+                        out[6*ostride] = ((workspace2[3] - workspace2[7]));
+                        out[7*ostride] = ((workspace2[3] + workspace2[7]));
                         dequantizep(out, ostride);
                         int d;
                         for(d=0; d<8; d++) {
                                 out[ostride*d] >>= 6;
                         }
                 }
-//#if 0
                 else{
                         out[0*ostride] = ((workspace2[0] + workspace2[4]));
                         out[1*ostride] = ((workspace2[0] - workspace2[4]));
@@ -253,19 +218,7 @@ void ifwht(int16_t* block, int16_t* output_block, int istride, int ostride, int 
                                 out[ostride*d] >>= 6;
                                 out[ostride*d] += 128;
                         }
-
-
-
                 }
-
-//#endif
-#ifdef DEBUG
-                for(x=0; x<8; x++)
-                        printf("%d,", out[i*ostride]);
-                printf("\n");
-#endif
-
-
         }
 }
 
@@ -280,7 +233,7 @@ void fwht16(int16_t* block, int16_t* output_block, int istride, int ostride, int
 
         int16_t* tmp = block;
         int16_t* out = output_block;
-        ;
+
         for(i=0; i<8; i++, tmp += istride, out+=ostride) {
                 // stage 1
                 workspace1[0]  = tmp[0] + tmp[1];

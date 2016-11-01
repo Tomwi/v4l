@@ -16,8 +16,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef NV12_H
-#define NV12_H
+#ifndef FRAME_H
+#define FRAME_H
 
 #include <stdio.h>
 #include <stdlib.h>
