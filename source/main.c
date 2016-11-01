@@ -1,3 +1,21 @@
+/*
+ * Copyright 2016 Tom aan de Wiel
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -11,8 +29,8 @@
 #include "decoder.h"
 
 #include "params.h"
-
-#define FPS (900)
+//#define WRITE
+#define FPS (5)
 
 int16_t chroma[WIDTH*HEIGHT/2], luminance[WIDTH*HEIGHT];
 int8_t chroma_8bit[WIDTH*HEIGHT/2], luminance_8bit[WIDTH*HEIGHT];
@@ -45,7 +63,7 @@ int main(int argc, char** argv){
         FILE* fp = fopen(argv[1], "rb");
 
 #ifdef WRITE
-        FILE* fp2 = fopen("test output", "wb");
+        FILE* fp2 = fopen("rawoutput", "wb");
 #endif
         if(fp == NULL) {
                 printf("Failed to open %s\n", argv[1]);
@@ -70,12 +88,18 @@ int main(int argc, char** argv){
                 decodeFrame(&cfrm_current, chroma_8bit, luminance_8bit, chroma, luminance);
 
                 printf("%lf and %lf\n", (float)WIDTH*HEIGHT/cfrm_current.lum_sz * 100, (float)WIDTH*HEIGHT/2/cfrm_current.chroma_sz * 100);
+
+
                 int a;
                 for(a=0; a<WIDTH*HEIGHT; a++)
                         luminance_8bit[a] = (uint8_t)luminance[a];
                 //  int a;
                 for(a=0; a<(WIDTH*HEIGHT/2); a++)
                         chroma_8bit[a] = (uint8_t)chroma[a];
+
+                        #ifdef WRITE
+                        writeRawFrame(fp2, &raw_frm, luminance_8bit, chroma_8bit);
+                        #endif
                 SDL_Rect rect;
 
                 SDL_LockYUVOverlay(bmp);

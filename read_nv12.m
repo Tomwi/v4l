@@ -1,10 +1,12 @@
-width = 560;
-height = 320;
+width = 1280;
+height = 720;
 
 fmsize = width*height;
 
-fp = fopen('output.yuv');
+%fp = fopen('build/rawoutput');
+fp = fopen('/mnt/arch/home/tomwi/Videos/yuv420.yuv');
 
+fseek(fp, width*height*1.5, 'bof');
 frame = fread(fp, [width, height], 'uint8')';
 fclose(fp);
 

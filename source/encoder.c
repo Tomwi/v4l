@@ -1,3 +1,21 @@
+/*
+ * Copyright 2016 Tom aan de Wiel
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+ 
 #include "encoder.h"
 
 void fillBlock(uint8_t* input, int16_t* dst, int stride){
@@ -10,24 +28,52 @@ void fillBlock(uint8_t* input, int16_t* dst, int stride){
         }
 }
 
-/* Computes the sample variance */
-int var(int16_t* input){
+int SADINTRA(int16_t* input){
 
         int32_t mean=0;
-        int32_t ssum=0;
+	int32_t ret = 0;
+
         int i;
-        for(i=0; i<8*8; i++, input++) {
-                mean += *input;
-                ssum += *input * *input;
+	int16_t* tmp = input;
+
+        for(i=0; i<8*8; i++, tmp++) {
+                mean += *tmp;
         }
-        return ssum - (mean*mean)/(64);
+	mean /= 64;
+	tmp = input;
+	for(i=0; i<8*8; i++, tmp++){
+		int meh = (*tmp - mean) < 0 ? -(*tmp-mean) : (*tmp-mean);
+
+		ret += 	meh*meh;
+	}
+	return ret;
+
 }
+
+
+int SADINTER(int16_t* old, int16_t* new){
+
+	int32_t ret = 0;
+        int i;
+
+        for(i=0; i<8*8; i++, old++, new++) {
+		int meh = (*old - *new) < 0 ? -(*old - *new) : (*old-*new);
+
+		ret += 	meh*meh;}
+	return ret;
+}
+
+
 
 int decide_blocktype(uint8_t* current, uint8_t* reference, int16_t* deltablock, int stride){
         //return IBLOCK;
         int16_t tmp[64];
+	int16_t old[64];
+
         fillBlock(current, tmp,stride);
-        int varc = var(tmp);
+        fillBlock(reference, old,stride);
+
+	int sadi = SADINTRA(tmp);
         int k,l;
         int16_t* work = tmp;
         for(int k=0; k<8; k++) {
@@ -42,8 +88,9 @@ int decide_blocktype(uint8_t* current, uint8_t* reference, int16_t* deltablock, 
                 reference += stride-8;
         }
         deltablock-=64;
-        int vard = var(deltablock);
-        return (varc <= vard ? IBLOCK : PBLOCK);
+        int sadd = SADINTER(old, tmp);
+//	printf("%d %d\n", sadi, sadd);
+        return (sadi <= (sadd - 128) ? IBLOCK : PBLOCK);
 }
 
 void encodeFrame(RAW_FRAME* frm, uint8_t* lref, uint8_t* cref, CFRAME* out){
@@ -69,6 +116,7 @@ void encodeFrame(RAW_FRAME* frm, uint8_t* lref, uint8_t* cref, CFRAME* out){
                         if(cref==NULL || pchain_chrm == MAX_PCHAIN ||
                            (blocktype=decide_blocktype(input, cref+(int)(input-frm->chrm), deltablock, frm->width/2))==IBLOCK) {
                                 fwht(input, coeffs, frm->width/2, frm->width/2, 1);
+                                quantize(coeffs, frm->width/2);
                                 blocktype = IBLOCK;
 
                         }
@@ -110,6 +158,7 @@ void encodeFrame(RAW_FRAME* frm, uint8_t* lref, uint8_t* cref, CFRAME* out){
                         if(lref==NULL || pchain_lum == MAX_PCHAIN ||
                            (blocktype=decide_blocktype(input, lref+(input-frm->lum), deltablock, frm->width))==IBLOCK) {
                                 fwht(input, coeffs, frm->width, frm->width, 1);
+                                quantize(coeffs, frm->width);
                                 blocktype = IBLOCK;
                         }
                         // inter code

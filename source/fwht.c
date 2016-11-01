@@ -1,12 +1,30 @@
-#include "fwht.h"
-#include <stdio.h>
-#include "quant.h"
 /*
+ * Copyright 2016 Tom aan de Wiel
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
  * 8x8 Fast Walsh Hadamard Transform in sequency order
  * based on the paper:
  * A Recursive Algorithm for Sequency-Ordered Fast Walsh
  * Transforms, R.D. Brown, 1977
  */
+
+#include "fwht.h"
+#include <stdio.h>
+#include "quant.h"
+
 #define QUANT (2)
 //#define DEBUG
 /* TODO: quantize seperately */
@@ -95,8 +113,6 @@ void fwht(uint8_t* block, int16_t* output_block, int istride, int ostride, int i
                 out[5*ostride] = (workspace2[2] - workspace2[6]); //>>(QUANT);
                 out[6*ostride] = (workspace2[3] - workspace2[7]); //>>(QUANT);
                 out[7*ostride] = (workspace2[3] + workspace2[7]); //>>(QUANT);
-
-                quantize(out, ostride);
         }
 }
 
