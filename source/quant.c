@@ -1,5 +1,24 @@
+/*
+ * Copyright 2016 Tom aan de Wiel
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
 #include "quant.h"
 
+#define DEADZONE_WIDTH (20)
 
 const int QUANT_TABLE[] = {
 								2, 2, 2, 2, 2, 2,  2,  2,
@@ -10,7 +29,6 @@ const int QUANT_TABLE[] = {
 								2, 2, 2, 2, 3, 6,  6,  6,
 								2, 2, 2, 3, 6, 6,  6,  6,
 								2, 2, 3, 6, 6, 6,  6,  8,
-
 };
 
 
@@ -23,55 +41,73 @@ const int QUANT_TABLE_P[] = {
 								3, 3, 3, 3, 3, 6,  6,  6,
 								3, 3, 3, 3, 6, 6,  6,  8,
 								3, 3, 3, 6, 6, 6,  8,  8,
-
 };
 
+void quantizeIntra(int16_t *coeff, int stride)
+{
+								const int *quant = QUANT_TABLE;
+								int i, j;
+								int16_t *tmp = coeff;
 
-void quantize(int16_t* coeff, int stride){
-								int* quant = QUANT_TABLE;
-								int i;
-								int16_t* tmp = coeff;
-								for(i=0; i<8; i++) {
-																*tmp >>= (*quant);
-																quant++;
-																if(*tmp >= -10 && *tmp <= 10)
-																								*tmp = 0;
+								for (j = 0; j < 8; j++) {
+																for (i = 0; i < 8; i++) {
+																								*tmp >>= (*quant);
+																								quant++;
+																								if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
+																																*tmp = 0;
 
-																tmp += stride;
+																								tmp++;
+																}
+																tmp += stride-8;
 								}
 }
 
-void deadzone_quant(int16_t* coeff, int stride){
-								int i;
-								int16_t* tmp = coeff;
-								for(i=0; i<8; i++) {
-																*tmp >>= 3;
-																if(*tmp >= -20 && *tmp <= 20)
-																								*tmp = 0;
-																tmp += stride;
-								}
-}
-
-void dequantizep(int16_t* coeff, int stride){
-								int* quant = QUANT_TABLE_P;
-								int i;
-								int16_t* tmp = coeff;
-								for(i=0; i<8; i++) {
-																*tmp <<= (*quant);
-																quant++;
-																tmp += stride;
+void dequantizeIntra(int16_t *coeff, int stride)
+{
+								const int *quant = QUANT_TABLE;
+								int i,j;
+								int16_t *tmp = coeff;
+								for (j = 0; j < 8; j++) {
+																for (i = 0; i < 8; i++) {
+																								*tmp <<= (*quant);
+																								quant++;
+																								tmp++;
+																}
+																tmp += stride-8;
 								}
 
 }
 
-void dequantize(int16_t* coeff, int stride){
-								int* quant = QUANT_TABLE;
-								int i;
-								int16_t* tmp = coeff;
-								for(i=0; i<8; i++) {
-																*tmp <<= (*quant);
-																quant++;
-																tmp += stride;
+void quantizeInter(int16_t *coeff, int stride)
+{
+								const int *quant = QUANT_TABLE_P;
+								int i,j;
+								int16_t *tmp = coeff;
+
+								for (j = 0; j < 8; j++) {
+																for (i = 0; i < 8; i++) {
+																								*tmp >>= (*quant);
+																								quant++;
+																								if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
+																																*tmp = 0;
+																								tmp++;
+																}
+																tmp += stride-8;
+								}
+}
+
+void dequantizeInter(int16_t *coeff, int stride)
+{
+								const int *quant = QUANT_TABLE_P;
+								int i,j;
+								int16_t *tmp = coeff;
+								for (j = 0; j < 8; j++) {
+																for (i = 0; i < 8; i++) {
+																								*tmp <<= (*quant);
+																								quant++;
+																								tmp++;
+																}
+																tmp += stride-8;
 								}
 
 }
