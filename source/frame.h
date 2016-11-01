@@ -25,8 +25,8 @@
 #include <string.h>
 
 typedef struct RAW_FRAME {
-        unsigned int width, height;
-        uint8_t *lum, *chrm;
+	unsigned int width, height;
+	uint8_t *lum, *chrm;
 
 } RAW_FRAME;
 
@@ -34,26 +34,26 @@ typedef struct FRAME_HEADER {
     unsigned int width, height;
     unsigned int lum_sz;
     unsigned int chroma_sz;
-}FRAME_HEADER;
+} FRAME_HEADER;
 
 typedef struct CFRAME {
-        unsigned int width, height;
-        int16_t* rlc_data_chrm;
-        int16_t* rlc_data_lum;
-        int16_t* chrm_coeff;
-        int16_t* lum_coeff;
-        // sizes of luma and chroma planes (compressed)
-        unsigned int chroma_sz, lum_sz;
+	unsigned int width, height;
+	int16_t *rlc_data_chrm;
+	int16_t *rlc_data_lum;
+	int16_t *chrm_coeff;
+	int16_t *lum_coeff;
+	// sizes of luma and chroma planes (compressed)
+	unsigned int chroma_sz, lum_sz;
 } CFRAME;
 
 #define PBLOCK (0)
 #define IBLOCK (1)
 
-int initRawFrame(const unsigned int width, const unsigned int height, RAW_FRAME* frm);
-int readRawFrame(FILE* fp, RAW_FRAME* out);
-void writeRawFrame(FILE* fp, uint8_t* luminance, uint8_t* chroma, int width, int height);
+int initRawFrame(const unsigned int width, const unsigned int height, RAW_FRAME *frm);
+int readRawFrame(FILE *fp, RAW_FRAME *out);
+void writeRawFrame(FILE *fp, uint8_t *luminance, uint8_t *chroma, int width, int height);
 
-int initCFrame(const unsigned int width, const unsigned int height, CFRAME* frm);
-int readCFrame(FILE* fp, CFRAME* out);
+int initCFrame(const unsigned int width, const unsigned int height, CFRAME *frm);
+int readCFrame(FILE *fp, CFRAME *out);
 
 #endif

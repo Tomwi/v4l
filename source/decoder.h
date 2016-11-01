@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 #ifndef DECODER_H
 #define DECODER_H
 
@@ -25,7 +25,7 @@
 #include "rlc.h"
 #include "fwht.h"
 
-void addDeltas(int16_t* deltas, uint8_t *ref, int stride);
-void decodeFrame(CFRAME* frm, uint8_t* chref, uint8_t* lref, int16_t* chromaout, int16_t* lumaout);
+void addDeltas(int16_t *deltas, uint8_t *ref, int stride);
+void decodeFrame(CFRAME *frm, uint8_t *chref, uint8_t *lref, int16_t *chromaout, int16_t *lumaout);
 
 #endif

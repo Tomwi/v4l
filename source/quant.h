@@ -15,13 +15,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 #ifndef QUANT_H
 #define QUANT_H
 #include <stdint.h>
 
-void quantize(int16_t* coeff, int stride);
-void dequantize(int16_t* coeff, int stride);
-void deadzone_quant(int16_t* coeff, int stride);
+void quantize(int16_t *coeff, int stride);
+void dequantize(int16_t *coeff, int stride);
+void deadzone_quant(int16_t *coeff, int stride);
 
 #endif

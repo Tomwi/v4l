@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 #ifndef RLC_H
 #define RLC_H
 
@@ -23,7 +23,7 @@
 
 #define PFRAME_BIT (1<<0)
 
-int rlc(int16_t* block, int16_t* output, int stride, int pframe);
-int derlc(int16_t** rlc_in, int16_t* dwht_out, int stride);
+int rlc(int16_t *block, int16_t *output, int stride, int pframe);
+int derlc(int16_t **rlc_in, int16_t *dwht_out, int stride);
 
 #endif

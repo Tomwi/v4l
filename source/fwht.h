@@ -15,13 +15,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 #ifndef FWHT_H
 #define FWHT_H
 
 #include <stdint.h>
 
-void fwht(uint8_t* block, int16_t* out, int istride, int ostride, int intra);
-void ifwht(int16_t* block, int16_t* output_block, int istride, int ostride, int intra);
-void fwht16(int16_t* block, int16_t* output_block, int istride, int ostride, int intra);
+void fwht(uint8_t *block, int16_t *out, int istride, int ostride, int intra);
+void ifwht(int16_t *block, int16_t *output_block, int istride, int ostride, int intra);
+void fwht16(int16_t *block, int16_t *output_block, int istride, int ostride, int intra);
 #endif
