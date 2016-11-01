@@ -30,7 +30,7 @@
 
 #include "params.h"
 //#define WRITE
-#define FPS (5)
+#define FPS (50)
 
 int16_t chroma[WIDTH*HEIGHT/2], luminance[WIDTH*HEIGHT];
 int8_t chroma_8bit[WIDTH*HEIGHT/2], luminance_8bit[WIDTH*HEIGHT];

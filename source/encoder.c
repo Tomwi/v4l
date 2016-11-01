@@ -126,13 +126,13 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 
 			if (pchain_chrm == MAX_PCHAIN || blocktype == IBLOCK) {
 				fwht(input, coeffs, frm->width/2, frm->width/2, 1);
-				quantize(coeffs, frm->width/2);
+				quantizeIntra(coeffs, frm->width/2);
 				blocktype = IBLOCK;
 
 			} else{
 				waspcoded_chrm = 1;
 				fwht16(deltablock, coeffs, 8, WIDTH/2, 0);
-
+				quantizeInter(coeffs, frm->width/2);
 			}
 
 			int ret = rlc(coeffs, rlco, frm->width/2, blocktype);
@@ -170,13 +170,14 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 	blocktype = decide_blocktype(input, lref+(input-frm->lum), deltablock, frm->width);
 			if (pchain_lum == MAX_PCHAIN || blocktype == IBLOCK) {
 				fwht(input, coeffs, frm->width, frm->width, 1);
-				quantize(coeffs, frm->width);
+				quantizeIntra(coeffs, frm->width);
 				blocktype = IBLOCK;
 			}
 			// inter code
 			else{
 				waspcoded = 1;
 				fwht16(deltablock, coeffs, 8, frm->width, 0);
+				quantizeInter(coeffs, frm->width);
 			}
 			int ret = rlc(coeffs, rlco, frm->width, blocktype);
 

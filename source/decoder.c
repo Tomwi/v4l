@@ -51,12 +51,14 @@ void decodeFrame(CFRAME *frm, uint8_t *chref, uint8_t *lref, int16_t *chromaout,
 	for (j = 0; j < frm->height/8; j++) {
 		for (i = 0; i < frm->width/2/8; i++) {
 			int stat = derlc(&rlco, derlco, frm->width/2);
-
-			ifwht(derlco, defwht, WIDTH/2, WIDTH/2, (stat & PFRAME_BIT) ? 0 : 1);
+      if(stat & PFRAME_BIT)
+        dequantizeInter(derlco, frm->width/2);
+      else
+        dequantizeIntra(derlco, frm->width/2);
+			ifwht(derlco, defwht, frm->width/2, frm->width/2, (stat & PFRAME_BIT) ? 0 : 1);
 			if (stat & PFRAME_BIT) {
 				// add deltas
 				uint8_t *refp = chref + j*8*frm->width/2 + i*8;
-
 				addDeltas(defwht, refp, frm->width/2);
 			}
 			// advance to next column
@@ -74,12 +76,14 @@ void decodeFrame(CFRAME *frm, uint8_t *chref, uint8_t *lref, int16_t *chromaout,
 	for (j = 0; j < frm->height/8; j++) {
 		for (i = 0; i < frm->width/8; i++) {
 			int stat = derlc(&rlco, derlco, frm->width);
-
-			ifwht(derlco, defwht, WIDTH, WIDTH, (stat & PFRAME_BIT) ? 0 : 1);
+      if(stat & PFRAME_BIT)
+        dequantizeInter(derlco, frm->width);
+      else
+        dequantizeIntra(derlco, frm->width);
+			ifwht(derlco, defwht, frm->width, frm->width, (stat & PFRAME_BIT) ? 0 : 1);
 			if (stat & PFRAME_BIT) {
 				// add deltas
 				uint8_t *refp = lref + j*8*frm->width + i*8;
-
 				addDeltas(defwht, refp, frm->width);
 			}
 			derlco += 8;

@@ -18,7 +18,7 @@
 
 #include "quant.h"
 
-#define DEADZONE_WIDTH (5)
+#define DEADZONE_WIDTH (20)
 
 const int QUANT_TABLE[] = {
 								2, 2, 2, 2, 2, 2,  2,  2,
@@ -29,7 +29,6 @@ const int QUANT_TABLE[] = {
 								2, 2, 2, 2, 3, 6,  6,  6,
 								2, 2, 2, 3, 6, 6,  6,  6,
 								2, 2, 3, 6, 6, 6,  6,  8,
-
 };
 
 
@@ -42,68 +41,73 @@ const int QUANT_TABLE_P[] = {
 								3, 3, 3, 3, 3, 6,  6,  6,
 								3, 3, 3, 3, 6, 6,  6,  8,
 								3, 3, 3, 6, 6, 6,  8,  8,
-
 };
 
-
-void quantize(int16_t *coeff, int stride)
+void quantizeIntra(int16_t *coeff, int stride)
 {
-								int *quant = QUANT_TABLE;
+								const int *quant = QUANT_TABLE;
 								int i, j;
 								int16_t *tmp = coeff;
 
 								for (j = 0; j < 8; j++) {
-								for (i = 0; i < 8; i++) {
-																*tmp >>= (*quant);
-																quant++;
-																if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
-																								*tmp = 0;
+																for (i = 0; i < 8; i++) {
+																								*tmp >>= (*quant);
+																								quant++;
+																								if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
+																																*tmp = 0;
 
-																tmp++;
-								}
-								tmp += stride-8;
-							}
-}
-
-void deadzone_quant(int16_t *coeff, int stride)
-{
-								int *quant = QUANT_TABLE;
-								int i;
-								int16_t *tmp = coeff;
-
-								for (i = 0; i < 8; i++) {
-																*tmp >>= (*quant);
-																quant++;
-																	if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
-																								*tmp = 0;
-																tmp += stride;
+																								tmp++;
+																}
+																tmp += stride-8;
 								}
 }
 
-void dequantizep(int16_t *coeff, int stride)
+void dequantizeIntra(int16_t *coeff, int stride)
 {
-								int *quant = QUANT_TABLE;
-								int i;
+								const int *quant = QUANT_TABLE;
+								int i,j;
 								int16_t *tmp = coeff;
-
-								for (i = 0; i < 8; i++) {
-																*tmp <<= (*quant);
-																quant++;
-																tmp += stride;
+								for (j = 0; j < 8; j++) {
+																for (i = 0; i < 8; i++) {
+																								*tmp <<= (*quant);
+																								quant++;
+																								tmp++;
+																}
+																tmp += stride-8;
 								}
 
 }
 
-void dequantize(int16_t *coeff, int stride)
+void quantizeInter(int16_t *coeff, int stride)
 {
-								int *quant = QUANT_TABLE;
-								int i;
+								const int *quant = QUANT_TABLE_P;
+								int i,j;
 								int16_t *tmp = coeff;
 
-								for (i = 0; i < 8; i++) {
-																*tmp <<= (*quant);
-																quant++;
-																tmp += stride;
+								for (j = 0; j < 8; j++) {
+																for (i = 0; i < 8; i++) {
+																								*tmp >>= (*quant);
+																								quant++;
+																								if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
+																																*tmp = 0;
+																								tmp++;
+																}
+																tmp += stride-8;
+								}
+}
+
+void dequantizeInter(int16_t *coeff, int stride)
+{
+								const int *quant = QUANT_TABLE_P;
+								int i,j;
+								int16_t *tmp = coeff;
+								for (j = 0; j < 8; j++) {
+																for (i = 0; i < 8; i++) {
+																								*tmp <<= (*quant);
+																								quant++;
+																								tmp++;
+																}
+																tmp += stride-8;
 								}
 
 }
