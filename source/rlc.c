@@ -50,26 +50,30 @@ int rlc(int16_t *in, int16_t *output, int stride, int blocktype)
 
 	int16_t *wp = block;
 
-	// read in block zig-zag-wise
+	// read in block from framebuffer
 	int lastzero_run = 0;
 
 	for (y = 0; y < 8; y++) {
 		for (x = 0; x < 8; x++) {
 			*wp = in[x+y*stride];
-			if (*wp == 0) {
-
-				lastzero_run++;
-			} else
-				lastzero_run = 0;
 			wp++;
 		}
+	}
+
+	// keep track of amount of trailing zeros, better to do it the other way around
+	// though...
+	for(i=0; i<64; i++){
+		if(block[zigzag[i]]==0)	{
+		lastzero_run++;
+		} else
+			lastzero_run = 0;
 	}
 
 	*output++ = (blocktype == PBLOCK ? PFRAME_BIT : 0);
 	ret++;
 
 	int to_encode = 8*8 - (lastzero_run > 14 ? lastzero_run : 0);
-
+	i =0;
 	while (i < to_encode) {
 		int cnt = 0;
 		int tmp;
