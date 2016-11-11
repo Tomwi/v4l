@@ -18,7 +18,7 @@
 
 #include "quant.h"
 
-#define DEADZONE_WIDTH (20)
+#define DEADZONE_WIDTH (15)
 
 const int QUANT_TABLE[] = {
 								2, 2, 2, 2, 2, 2,  2,  2,
@@ -38,9 +38,9 @@ const int QUANT_TABLE_P[] = {
 								3, 3, 3, 3, 3, 3,  3,  3,
 								3, 3, 3, 3, 3, 3,  3,  6,
 								3, 3, 3, 3, 3, 3,  6,  6,
-								3, 3, 3, 3, 3, 6,  6,  6,
-								3, 3, 3, 3, 6, 6,  6,  8,
-								3, 3, 3, 6, 6, 6,  8,  8,
+								3, 3, 3, 3, 3, 6,  6,  9,
+								3, 3, 3, 3, 6, 6,  9,  9,
+								3, 3, 3, 6, 6, 9,  9,  10,
 };
 
 void quantizeIntra(int16_t *coeff, int stride)

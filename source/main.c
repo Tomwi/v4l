@@ -25,12 +25,14 @@
 #include "fwht.h"
 #include "frame.h"
 #include "rlc.h"
-#include "encoder.h"
+#include "encoder.h"/media/thomas/data/
 #include "decoder.h"
 
 #include "params.h"
 //#define WRITE
-#define FPS (50)
+//#define READ
+#define FPS (700)
+
 
 int16_t chroma[WIDTH*HEIGHT/2], luminance[WIDTH*HEIGHT];
 int8_t chroma_8bit[WIDTH*HEIGHT/2], luminance_8bit[WIDTH*HEIGHT];
@@ -64,13 +66,15 @@ int main(int argc, char **argv)
 	FILE *fp = fopen(argv[1], "rb");
 
 #ifdef WRITE
-	FILE *fp2 = fopen("rawoutput", "wb");
+	FILE *fp2 = fopen("/media/thomas/data/rawoutput", "wb");
 #endif
+
+
 	if (fp == NULL) {
 		printf("Failed to open %s\n", argv[1]);
 		return 0;
 	}
-	if (!initRawFrame(WIDTH, HEIGHT, &raw_frm) || !initCFrame(WIDTH, HEIGHT, &cfrm_current) || !initCFrame(WIDTH, HEIGHT, &cfrm_current)) {
+	if (!initRawFrame(WIDTH, HEIGHT, &raw_frm) || !initCFrame(WIDTH, HEIGHT, &cfrm_current)) {
 		printf("frame init error\n");
 		return 0;
 	}
@@ -78,6 +82,7 @@ int main(int argc, char **argv)
 	clock_t start = clock(), diff;
 
 	for (int k = 0; k < FPS; k++) {
+		#ifndef READ
 		if (!readRawFrame(fp, &raw_frm)) {
 			printf("Error during read\n");
 			return 0;
@@ -87,8 +92,16 @@ int main(int argc, char **argv)
 		else
 			encodeFrame(&raw_frm, luminance_8bit, chroma_8bit, &cfrm_current);
 
-		decodeFrame(&cfrm_current, chroma_8bit, luminance_8bit, chroma, luminance);
 
+		#ifdef WRITE
+		//writeRawFrame(fp2, &raw_frm, luminance_8bit, chroma_8bit);
+			writeCFrame(&cfrm_current, fp2);
+		#endif
+		#else
+			readCFrame(fp, &cfrm_current);
+		#endif
+		decodeFrame(&cfrm_current, chroma_8bit, luminance_8bit, chroma, luminance);
+		printf("read %d %d\n", cfrm_current.lum_sz, cfrm_current.chroma_sz);
 		printf("%lf and %lf\n", (float)WIDTH*HEIGHT/cfrm_current.lum_sz * 100, (float)WIDTH*HEIGHT/2/cfrm_current.chroma_sz * 100);
 
 
@@ -100,9 +113,7 @@ int main(int argc, char **argv)
 		for (a = 0; a < (WIDTH*HEIGHT/2); a++)
 			chroma_8bit[a] = (uint8_t)chroma[a];
 
-			#ifdef WRITE
-			writeRawFrame(fp2, &raw_frm, luminance_8bit, chroma_8bit);
-			#endif
+
 		SDL_Rect rect;
 
 		SDL_LockYUVOverlay(bmp);

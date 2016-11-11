@@ -118,8 +118,10 @@ int readCFrame(FILE *fp, CFRAME *out)
 	fread(&hdr, 1, sizeof(FRAME_HEADER), fp);
 	out->lum_sz = hdr.lum_sz;
 	out->chroma_sz = hdr.chroma_sz;
-	fread(out->lum_coeff, 1, hdr.lum_sz, fp);
-	fread(out->chrm_coeff, 1, hdr.chroma_sz, fp);
+	out->width = hdr.width;
+	out->height = hdr.height;
+	int ret =fread(out->rlc_data_lum, 1, hdr.lum_sz, fp);
+	int ret2 = fread(out->rlc_data_chrm, 1, hdr.chroma_sz, fp);
 	return 1;
 }
 
@@ -134,6 +136,6 @@ void writeCFrame(CFRAME *frm, FILE *fp)
   hdr.lum_sz = frm->lum_sz;
   hdr.chroma_sz = frm->chroma_sz;
   fwrite(&hdr, 1, sizeof(FRAME_HEADER), fp);
-  fwrite(frm->lum_coeff, 1, hdr.lum_sz, fp);
-  fwrite(frm->chrm_coeff, 1, hdr.chroma_sz, fp);
+  fwrite(frm->rlc_data_lum, 1, hdr.lum_sz, fp);
+  fwrite(frm->rlc_data_chrm, 1, hdr.chroma_sz, fp);
 }
