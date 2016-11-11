@@ -15,12 +15,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
- 
+
 #ifndef PARAMS_H
 #define PARAMS_H
 
 #define WIDTH (1280)
 #define HEIGHT (720)
+// #define WIDTH (352)
+// #define HEIGHT (288)
+
+// #define WIDTH (176)
+// #define HEIGHT (144)
 
 #define MAX_PCHAIN (10)
 

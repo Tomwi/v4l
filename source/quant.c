@@ -18,7 +18,7 @@
 
 #include "quant.h"
 
-#define DEADZONE_WIDTH (15)
+#define DEADZONE_WIDTH (20)
 
 const int QUANT_TABLE[] = {
 								2, 2, 2, 2, 2, 2,  2,  2,
@@ -30,22 +30,33 @@ const int QUANT_TABLE[] = {
 								2, 2, 2, 3, 6, 6,  6,  6,
 								2, 2, 3, 6, 6, 6,  6,  8,
 };
-
+//
+// const int QUANT_TABLE_P[] = {
+// 								2, 2, 2, 2, 2, 2,  2,  2,
+// 								2, 2, 2, 2, 2, 2,  2,  2,
+// 								2, 2, 2, 2, 2, 2,  2,  3,
+// 								2, 2, 2, 2, 2, 2,  3,  4,
+// 								2, 2, 2, 2, 2, 3,  4,  5,
+// 								2, 2, 2, 2, 3, 4,  5,  5,
+// 								2, 2, 2, 3, 4, 5,  5,  5,
+// 								2, 2, 3, 4, 5, 5,  5,  5,
+// };
 
 const int QUANT_TABLE_P[] = {
-								3, 3, 3, 3, 3, 3,  3,  3,
-								3, 3, 3, 3, 3, 3,  3,  3,
-								3, 3, 3, 3, 3, 3,  3,  3,
-								3, 3, 3, 3, 3, 3,  3,  6,
-								3, 3, 3, 3, 3, 3,  6,  6,
-								3, 3, 3, 3, 3, 6,  6,  9,
-								3, 3, 3, 3, 6, 6,  9,  9,
-								3, 3, 3, 6, 6, 9,  9,  10,
+								3, 3, 3, 3, 3, 3,  3,  4,
+								3, 3, 3, 3, 3, 3,  4,  5,
+								3, 3, 3, 3, 3, 4,  5,  6,
+								3, 3, 3, 3, 4, 5,  6,  7,
+								2, 3, 3, 4, 5, 6,  7,  8,
+								3, 3, 4, 5, 6, 7,  8,  9,
+								3, 4, 5, 6, 7, 8,  9,  9,
+								4, 5, 6, 7, 8, 9,  9,  9,
 };
+
 
 void quantizeIntra(int16_t *coeff, int stride)
 {
-								const int *quant = QUANT_TABLE;
+								const int *quant = QUANT_TABLE_P;
 								int i, j;
 								int16_t *tmp = coeff;
 
@@ -64,7 +75,7 @@ void quantizeIntra(int16_t *coeff, int stride)
 
 void dequantizeIntra(int16_t *coeff, int stride)
 {
-								const int *quant = QUANT_TABLE;
+								const int *quant = QUANT_TABLE_P;
 								int i,j;
 								int16_t *tmp = coeff;
 								for (j = 0; j < 8; j++) {

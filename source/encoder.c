@@ -30,7 +30,7 @@ void fillBlock(uint8_t *input, int16_t *dst, int stride)
 	}
 }
 
-int SADINTRA(int16_t *input)
+int VARINTRA(int16_t *input)
 {
 
 	int32_t mean = 0;
@@ -46,14 +46,14 @@ int SADINTRA(int16_t *input)
 	for (i = 0; i < 8*8; i++, tmp++) {
 		int meh = (*tmp - mean) < 0 ? -(*tmp-mean) : (*tmp-mean);
 
-		ret +=	meh*meh;
+		ret +=	meh;//*meh;
 	}
 	return ret;
 
 }
 
 
-int SADINTER(int16_t *old, int16_t *new)
+int VARINTER(int16_t *old, int16_t *new)
 {
 
 	int32_t ret = 0;
@@ -62,7 +62,8 @@ int SADINTER(int16_t *old, int16_t *new)
 	for (i = 0; i < 8*8; i++, old++, new++) {
 		int meh = (*old - *new) < 0 ? -(*old - *new) : (*old-*new);
 
-		ret +=	meh*meh; }
+		ret +=	meh; //*meh;
+	}
 	return ret;
 }
 
@@ -78,7 +79,7 @@ int decide_blocktype(uint8_t *current, uint8_t *reference, int16_t *deltablock,
 	fillBlock(current, tmp, stride);
 	fillBlock(reference, old, stride);
 
-	int sadi = SADINTRA(tmp);
+	int vari = VARINTRA(tmp);
 	int k, l;
 	int16_t *work = tmp;
 
@@ -94,9 +95,9 @@ int decide_blocktype(uint8_t *current, uint8_t *reference, int16_t *deltablock,
 		reference += stride-8;
 	}
 	deltablock -= 64;
-	int sadd = SADINTER(old, tmp);
+	int vard = VARINTER(old, tmp);
 //	printf("%d %d\n", sadi, sadd);
-	return (sadi <= (sadd - 128) ? IBLOCK : PBLOCK);
+	return (vari <= vard ? IBLOCK : PBLOCK);
 }
 
 void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)

@@ -25,20 +25,23 @@
 #include "fwht.h"
 #include "frame.h"
 #include "rlc.h"
-#include "encoder.h"/media/thomas/data/
+#include "encoder.h"
 #include "decoder.h"
 
 #include "params.h"
 //#define WRITE
 //#define READ
-#define FPS (700)
-
-
+#define FPS (500)
+// #define WRITE_RAW
+// #define WRITE_CRATIO
+//#define WRITE_TIMES
+//#define TIME_ENCODER
 int16_t chroma[WIDTH*HEIGHT/2], luminance[WIDTH*HEIGHT];
 int8_t chroma_8bit[WIDTH*HEIGHT/2], luminance_8bit[WIDTH*HEIGHT];
 
 int main(int argc, char **argv)
 {
+	printf("clocks per sec %d\n", CLOCKS_PER_SEC);
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
 		fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
 		exit(1);
@@ -66,7 +69,19 @@ int main(int argc, char **argv)
 	FILE *fp = fopen(argv[1], "rb");
 
 #ifdef WRITE
-	FILE *fp2 = fopen("/media/thomas/data/rawoutput", "wb");
+	FILE *fp2 = fopen("/run/media/tomwi/data/compressedoutput", "wb");
+#endif
+
+#ifdef WRITE_RAW
+	FILE *fp3 = fopen("/run/media/tomwi/data/rawoutput", "wb");
+#endif
+
+#ifdef WRITE_CRATIO
+	FILE *fp4 = fopen("/run/media/tomwi/data/cratio.txt", "wb");
+#endif
+
+#ifdef WRITE_TIMES
+	FILE *fp5 = fopen("/run/media/tomwi/data/times.txt", "wb");
 #endif
 
 
@@ -79,7 +94,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-	clock_t start = clock(), diff;
+
 
 	for (int k = 0; k < FPS; k++) {
 		#ifndef READ
@@ -87,22 +102,84 @@ int main(int argc, char **argv)
 			printf("Error during read\n");
 			return 0;
 		}
+			clock_t start = clock(), diff;
 		if (k == 0)
 			encodeFrame(&raw_frm, NULL, NULL, &cfrm_current);
 		else
 			encodeFrame(&raw_frm, luminance_8bit, chroma_8bit, &cfrm_current);
 
+			#ifdef TIME_ENCODER
+			int i,j;
+			int16_t *rlco = cfrm_current.rlc_data_chrm;
+			int stat = *rlco;
+
+			int16_t *input = cfrm_current.chrm_coeff;
+			int16_t *coeffs = chroma;
+			uint8_t *chref = chroma_8bit;
+
+			/* Only for timing purposes!!! */
+			for (j = 0; j < HEIGHT/8; j++) {
+				for (i = 0; i < WIDTH/2/8; i++) {
+					ifwht(input, coeffs, WIDTH/2, WIDTH/2, (stat & PFRAME_BIT) ? 0 : 1);
+					if (stat & PFRAME_BIT) {
+						// add deltas
+						uint8_t *refp = chref + j*8*WIDTH/2 + i*8;
+						addDeltas(coeffs, refp, WIDTH/2);
+					}
+					coeffs += 8;
+					input += 8;
+				}
+				coeffs += (WIDTH/2)*7;
+				input  += (WIDTH/2)*7;
+			}
+
+			rlco = cfrm_current.rlc_data_lum;
+			stat = *rlco;
+
+			input = cfrm_current.lum_coeff;
+			coeffs = chroma;
+			uint8_t* lref = luminance_8bit;
+
+			/* Only for timing purposes!!! */
+			for (j = 0; j < HEIGHT/8; j++) {
+				for (i = 0; i < WIDTH/8; i++) {
+					ifwht(input, coeffs, WIDTH, WIDTH, (stat & PFRAME_BIT) ? 0 : 1);
+					if (stat & PFRAME_BIT) {
+						// add deltas
+						uint8_t *refp = lref + j*8*WIDTH + i*8;
+						addDeltas(coeffs, refp, WIDTH);
+					}
+					coeffs += 8;
+					input += 8;
+				}
+				coeffs += (WIDTH)*7;
+				input  += (WIDTH)*7;
+			}
+			#endif
+			diff = clock() - start;
+		int msec = diff; // * 1000 / CLOCKS_PER_SEC;
 
 		#ifdef WRITE
-		//writeRawFrame(fp2, &raw_frm, luminance_8bit, chroma_8bit);
 			writeCFrame(&cfrm_current, fp2);
 		#endif
 		#else
 			readCFrame(fp, &cfrm_current);
 		#endif
+
+		clock_t start2 = clock(), diff2;
 		decodeFrame(&cfrm_current, chroma_8bit, luminance_8bit, chroma, luminance);
+		diff2 = clock() - start2;
+
+		int msec2 = diff2; // * 1000 / CLOCKS_PER_SEC;
 		printf("read %d %d\n", cfrm_current.lum_sz, cfrm_current.chroma_sz);
 		printf("%lf and %lf\n", (float)WIDTH*HEIGHT/cfrm_current.lum_sz * 100, (float)WIDTH*HEIGHT/2/cfrm_current.chroma_sz * 100);
+		#ifdef WRITE_CRATIO
+		fprintf(fp4, "%f, %f\n", (float)WIDTH*HEIGHT/cfrm_current.lum_sz * 100, (float)WIDTH*HEIGHT/2/cfrm_current.chroma_sz * 100);
+		#endif
+
+		#ifdef WRITE_TIMES
+		fprintf(fp5, "%d, %d\n", msec, msec2);
+		#endif
 
 
 		int a;
@@ -113,6 +190,9 @@ int main(int argc, char **argv)
 		for (a = 0; a < (WIDTH*HEIGHT/2); a++)
 			chroma_8bit[a] = (uint8_t)chroma[a];
 
+			#ifdef WRITE_RAW
+				writeRawFrame(fp3, luminance_8bit, chroma_8bit, WIDTH, HEIGHT);
+			#endif
 
 		SDL_Rect rect;
 
@@ -130,11 +210,7 @@ int main(int argc, char **argv)
 		SDL_DisplayYUVOverlay(bmp, &rect);
 
 	}
-	diff = clock() - start;
 
-	int msec = diff * 1000 / CLOCKS_PER_SEC;
-
-	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 	fclose(fp);
 
 #ifdef WRITE
