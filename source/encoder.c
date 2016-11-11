@@ -69,7 +69,7 @@ int SADINTER(int16_t *old, int16_t *new)
 
 
 int decide_blocktype(uint8_t *current, uint8_t *reference, int16_t *deltablock,
-  int stride)
+		int stride)
 {
 	//return IBLOCK;
 	int16_t tmp[64];
@@ -120,8 +120,8 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 	for (j = 0; j < frm->height/8; j++) {
 		for (i = 0; i < frm->width/2/8; i++) {
 			int blocktype = IBLOCK;
-      if (cref != NULL)
-	blocktype = decide_blocktype(input, cref+(int)(input-frm->chrm),
+	if (cref != NULL)
+		blocktype = decide_blocktype(input, cref+(int)(input-frm->chrm),
 				      deltablock, frm->width/2);
 
 			if (pchain_chrm == MAX_PCHAIN || blocktype == IBLOCK) {
@@ -166,8 +166,8 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 		for (i = 0; i < frm->width/8; i++) {
 			// intra code, first frame is always intra coded.
 			int blocktype = IBLOCK;
-      if (lref != NULL)
-	blocktype = decide_blocktype(input, lref+(input-frm->lum), deltablock, frm->width);
+	if (lref != NULL)
+		blocktype = decide_blocktype(input, lref+(input-frm->lum), deltablock, frm->width);
 			if (pchain_lum == MAX_PCHAIN || blocktype == IBLOCK) {
 				fwht(input, coeffs, frm->width, frm->width, 1);
 				quantizeIntra(coeffs, frm->width);

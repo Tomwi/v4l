@@ -62,8 +62,8 @@ int rlc(int16_t *in, int16_t *output, int stride, int blocktype)
 
 	// keep track of amount of trailing zeros, better to do it the other way around
 	// though...
-	for(i=0; i<64; i++){
-		if(block[zigzag[i]]==0)	{
+	for (i = 0; i < 64; i++) {
+		if (block[zigzag[i]] == 0)	{
 		lastzero_run++;
 		} else
 			lastzero_run = 0;
@@ -73,7 +73,8 @@ int rlc(int16_t *in, int16_t *output, int stride, int blocktype)
 	ret++;
 
 	int to_encode = 8*8 - (lastzero_run > 14 ? lastzero_run : 0);
-	i =0;
+
+	i = 0;
 	while (i < to_encode) {
 		int cnt = 0;
 		int tmp;

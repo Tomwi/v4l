@@ -65,8 +65,9 @@ void quantizeIntra(int16_t *coeff, int stride)
 void dequantizeIntra(int16_t *coeff, int stride)
 {
 								const int *quant = QUANT_TABLE;
-								int i,j;
+								int i, j;
 								int16_t *tmp = coeff;
+
 								for (j = 0; j < 8; j++) {
 																for (i = 0; i < 8; i++) {
 																								*tmp <<= (*quant);
@@ -81,7 +82,7 @@ void dequantizeIntra(int16_t *coeff, int stride)
 void quantizeInter(int16_t *coeff, int stride)
 {
 								const int *quant = QUANT_TABLE_P;
-								int i,j;
+								int i, j;
 								int16_t *tmp = coeff;
 
 								for (j = 0; j < 8; j++) {
@@ -99,8 +100,9 @@ void quantizeInter(int16_t *coeff, int stride)
 void dequantizeInter(int16_t *coeff, int stride)
 {
 								const int *quant = QUANT_TABLE_P;
-								int i,j;
+								int i, j;
 								int16_t *tmp = coeff;
+
 								for (j = 0; j < 8; j++) {
 																for (i = 0; i < 8; i++) {
 																								*tmp <<= (*quant);

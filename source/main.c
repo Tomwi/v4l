@@ -25,7 +25,7 @@
 #include "fwht.h"
 #include "frame.h"
 #include "rlc.h"
-#include "encoder.h"/media/thomas/data/
+#include "encoder.h"
 #include "decoder.h"
 
 #include "params.h"

@@ -120,8 +120,9 @@ int readCFrame(FILE *fp, CFRAME *out)
 	out->chroma_sz = hdr.chroma_sz;
 	out->width = hdr.width;
 	out->height = hdr.height;
-	int ret =fread(out->rlc_data_lum, 1, hdr.lum_sz, fp);
+	int ret = fread(out->rlc_data_lum, 1, hdr.lum_sz, fp);
 	int ret2 = fread(out->rlc_data_chrm, 1, hdr.chroma_sz, fp);
+
 	return 1;
 }
 
