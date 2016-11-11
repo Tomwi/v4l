@@ -100,7 +100,7 @@ int decide_blocktype(uint8_t *current, uint8_t *reference, int16_t *deltablock,
 	return (vari <= vard ? IBLOCK : PBLOCK);
 }
 
-void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
+void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out, int* pcount)
 {
 	int i, j;
 
@@ -132,6 +132,7 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 
 			} else{
 				waspcoded_chrm = 1;
+				pcount[0]++;
 				fwht16(deltablock, coeffs, 8, WIDTH/2, 0);
 				quantizeInter(coeffs, frm->width/2);
 			}
@@ -176,6 +177,7 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 			}
 			// inter code
 			else{
+				pcount[1]++;
 				waspcoded = 1;
 				fwht16(deltablock, coeffs, 8, frm->width, 0);
 				quantizeInter(coeffs, frm->width);

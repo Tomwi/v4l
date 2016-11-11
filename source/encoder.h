@@ -38,6 +38,6 @@ typedef struct ENCODER {
 int var(int16_t *input);
 void fillBlock(uint8_t *input, int16_t *dst, int stride);
 int itra_dec(uint8_t *current, uint8_t *reference, int16_t *deltablock, int stride);
-void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out);
+void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out, int* pcount);
 
 #endif

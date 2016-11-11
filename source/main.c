@@ -32,12 +32,14 @@
 //#define WRITE
 //#define READ
 #define FPS (500)
-// #define WRITE_RAW
-// #define WRITE_CRATIO
-//#define WRITE_TIMES
-//#define TIME_ENCODER
+#define WRITE_RAW
+#define WRITE_CRATIO
+#define WRITE_TIMES
+#define TIME_ENCODER
+#define WRITE_PCOUNT
 int16_t chroma[WIDTH*HEIGHT/2], luminance[WIDTH*HEIGHT];
 int8_t chroma_8bit[WIDTH*HEIGHT/2], luminance_8bit[WIDTH*HEIGHT];
+int pcount[2];
 
 int main(int argc, char **argv)
 {
@@ -83,7 +85,10 @@ int main(int argc, char **argv)
 #ifdef WRITE_TIMES
 	FILE *fp5 = fopen("/run/media/tomwi/data/times.txt", "wb");
 #endif
-
+#ifdef WRITE_PCOUNT
+	FILE* fp6 = fopen("/run/media/tomwi/data/pcount.txt", "wb");
+#endif
+ 
 
 	if (fp == NULL) {
 		printf("Failed to open %s\n", argv[1]);
@@ -103,10 +108,12 @@ int main(int argc, char **argv)
 			return 0;
 		}
 			clock_t start = clock(), diff;
+		pcount[0] = 0;
+		pcount[1] =0;
 		if (k == 0)
-			encodeFrame(&raw_frm, NULL, NULL, &cfrm_current);
+			encodeFrame(&raw_frm, NULL, NULL, &cfrm_current, pcount);
 		else
-			encodeFrame(&raw_frm, luminance_8bit, chroma_8bit, &cfrm_current);
+			encodeFrame(&raw_frm, luminance_8bit, chroma_8bit, &cfrm_current, pcount);
 
 			#ifdef TIME_ENCODER
 			int i,j;
@@ -180,7 +187,9 @@ int main(int argc, char **argv)
 		#ifdef WRITE_TIMES
 		fprintf(fp5, "%d, %d\n", msec, msec2);
 		#endif
-
+		#ifdef WRITE_PCOUNT
+		fprintf(fp6,"%d,%d\n", pcount[0], pcount[1]);
+		#endif
 
 		int a;
 
@@ -216,6 +225,8 @@ int main(int argc, char **argv)
 #ifdef WRITE
 	fclose(fp2);
 #endif
-
+#ifdef WRITE_PCOUNT
+	fclose(fp6);
+#endif
 	return 0;
 }
