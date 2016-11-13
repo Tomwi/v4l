@@ -21,95 +21,95 @@
 #define DEADZONE_WIDTH (15)
 
 const int QUANT_TABLE[] = {
-								2, 2, 2, 2, 2, 2,  2,  2,
-								2, 2, 2, 2, 2, 2,  2,  2,
-								2, 2, 2, 2, 2, 2,  2,  3,
-								2, 2, 2, 2, 2, 2,  3,  6,
-								2, 2, 2, 2, 2, 3,  6,  6,
-								2, 2, 2, 2, 3, 6,  6,  6,
-								2, 2, 2, 3, 6, 6,  6,  6,
-								2, 2, 3, 6, 6, 6,  6,  8,
+	2, 2, 2, 2, 2, 2,  2,  2,
+	2, 2, 2, 2, 2, 2,  2,  2,
+	2, 2, 2, 2, 2, 2,  2,  3,
+	2, 2, 2, 2, 2, 2,  3,  6,
+	2, 2, 2, 2, 2, 3,  6,  6,
+	2, 2, 2, 2, 3, 6,  6,  6,
+	2, 2, 2, 3, 6, 6,  6,  6,
+	2, 2, 3, 6, 6, 6,  6,  8,
 };
 
 
 const int QUANT_TABLE_P[] = {
-								3, 3, 3, 3, 3, 3,  3,  3,
-								3, 3, 3, 3, 3, 3,  3,  3,
-								3, 3, 3, 3, 3, 3,  3,  3,
-								3, 3, 3, 3, 3, 3,  3,  6,
-								3, 3, 3, 3, 3, 3,  6,  6,
-								3, 3, 3, 3, 3, 6,  6,  9,
-								3, 3, 3, 3, 6, 6,  9,  9,
-								3, 3, 3, 6, 6, 9,  9,  10,
+	3, 3, 3, 3, 3, 3,  3,  3,
+	3, 3, 3, 3, 3, 3,  3,  3,
+	3, 3, 3, 3, 3, 3,  3,  3,
+	3, 3, 3, 3, 3, 3,  3,  6,
+	3, 3, 3, 3, 3, 3,  6,  6,
+	3, 3, 3, 3, 3, 6,  6,  9,
+	3, 3, 3, 3, 6, 6,  9,  9,
+	3, 3, 3, 6, 6, 9,  9,  10,
 };
 
 void quantizeIntra(int16_t *coeff, int stride)
 {
-								const int *quant = QUANT_TABLE;
-								int i, j;
-								int16_t *tmp = coeff;
+	const int *quant = QUANT_TABLE;
+	int i, j;
+	int16_t *tmp = coeff;
 
-								for (j = 0; j < 8; j++) {
-																for (i = 0; i < 8; i++) {
-																								*tmp >>= (*quant);
-																								quant++;
-																								if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
-																																*tmp = 0;
+	for (j = 0; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			*tmp >>= (*quant);
+			quant++;
+			if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
+				*tmp = 0;
 
-																								tmp++;
-																}
-																tmp += stride-8;
-								}
+			tmp++;
+		}
+		tmp += stride-8;
+	}
 }
 
 void dequantizeIntra(int16_t *coeff, int stride)
 {
-								const int *quant = QUANT_TABLE;
-								int i, j;
-								int16_t *tmp = coeff;
+	const int *quant = QUANT_TABLE;
+	int i, j;
+	int16_t *tmp = coeff;
 
-								for (j = 0; j < 8; j++) {
-																for (i = 0; i < 8; i++) {
-																								*tmp <<= (*quant);
-																								quant++;
-																								tmp++;
-																}
-																tmp += stride-8;
-								}
+	for (j = 0; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			*tmp <<= (*quant);
+			quant++;
+			tmp++;
+		}
+		tmp += stride-8;
+	}
 
 }
 
 void quantizeInter(int16_t *coeff, int stride)
 {
-								const int *quant = QUANT_TABLE_P;
-								int i, j;
-								int16_t *tmp = coeff;
+	const int *quant = QUANT_TABLE_P;
+	int i, j;
+	int16_t *tmp = coeff;
 
-								for (j = 0; j < 8; j++) {
-																for (i = 0; i < 8; i++) {
-																								*tmp >>= (*quant);
-																								quant++;
-																								if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
-																																*tmp = 0;
-																								tmp++;
-																}
-																tmp += stride-8;
-								}
+	for (j = 0; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			*tmp >>= (*quant);
+			quant++;
+			if (*tmp >= -DEADZONE_WIDTH && *tmp <= DEADZONE_WIDTH)
+				*tmp = 0;
+			tmp++;
+		}
+		tmp += stride-8;
+	}
 }
 
 void dequantizeInter(int16_t *coeff, int stride)
 {
-								const int *quant = QUANT_TABLE_P;
-								int i, j;
-								int16_t *tmp = coeff;
+	const int *quant = QUANT_TABLE_P;
+	int i, j;
+	int16_t *tmp = coeff;
 
-								for (j = 0; j < 8; j++) {
-																for (i = 0; i < 8; i++) {
-																								*tmp <<= (*quant);
-																								quant++;
-																								tmp++;
-																}
-																tmp += stride-8;
-								}
+	for (j = 0; j < 8; j++) {
+		for (i = 0; i < 8; i++) {
+			*tmp <<= (*quant);
+			quant++;
+			tmp++;
+		}
+		tmp += stride-8;
+	}
 
 }
