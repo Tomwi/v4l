@@ -113,7 +113,11 @@ void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *ou
 
 	unsigned int width = enc->cur_resolution[0];
 	unsigned int height = enc->cur_resolution[1];
-
+	if(width != enc->prev_resolution[0] || height != enc->prev_resolution[1]){
+		printf("RESOLUTION CHANGE, FORBIDDING reference frame\n");
+		enc->pchain_chrm = enc->max_pchain;
+		enc->pchain_lum = enc->max_pchain;
+	}
 	enc->waspcoded_chrm = 0;
 	for (j = 0; j < height/8; j++) {
 		for (i = 0; i < width/2/8; i++) {
@@ -159,7 +163,7 @@ void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *ou
 	rlco = out->rlc_data_lum;
 
 	enc->waspcoded = 0;
-	
+
 	for (j = 0; j < height/8; j++) {
 		for (i = 0; i < width/8; i++) {
 			// intra code, first frame is always intra coded.

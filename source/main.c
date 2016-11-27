@@ -31,6 +31,9 @@
 #include "params.h"
 //#define WRITE
 //#define READ
+#define RES_CHANGE
+#define RES_CHANGE_FRAME (50)
+#define RES_CHANGE_SCALE_DIV (2)
 #define STATELESS
 #define FPS (500)
 // #define WRITE_RAW
@@ -45,30 +48,38 @@ int pcount[2];
 int main(int argc, char **argv)
 {
 	ENCODER enc;
-	printf("clocks per sec %d\n", CLOCKS_PER_SEC);
+	#ifndef RES_CHANGE
+	if (argc <= 3) {
+		printf("please provide input file, width and height\n");
+		return 0;
+	}
+	#else
+	if (argc <= 6) {
+		printf("please provide input file, width and height, second input file, width and height\n");
+		return 0;
+	}
+	#endif
+
+	int width, height;
+	sscanf(argv[2], "%d",  &width);
+	sscanf(argv[3], "%d",  &height);
+
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
 		fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
 		exit(1);
 	}
 	SDL_Surface *screen;
 
-	screen = SDL_SetVideoMode(WIDTH, HEIGHT, 0, 0);
+	screen = SDL_SetVideoMode(width, height, 0, 0);
 	if (!screen) {
 		fprintf(stderr, "SDL: could not set video mode - exiting\n");
 		exit(1);
 	}
-	SDL_Overlay     *bmp = NULL;
-
-	bmp = SDL_CreateYUVOverlay(WIDTH, HEIGHT,
+	SDL_Overlay *bmp = SDL_CreateYUVOverlay(width, height,
 				   SDL_YV12_OVERLAY, screen);
 
 	RAW_FRAME raw_frm;
 	CFRAME cfrm_current, cfrm_reference;
-
-	if (argc <= 1) {
-		printf("please provide input and output\n");
-		return 0;
-	}
 
 	FILE *fp = fopen(argv[1], "rb");
 
@@ -96,7 +107,7 @@ int main(int argc, char **argv)
 		printf("Failed to open %s\n", argv[1]);
 		return 0;
 	}
-	if (!initRawFrame(WIDTH, HEIGHT, &raw_frm) || !initCFrame(WIDTH, HEIGHT, &cfrm_current)) {
+	if (!initRawFrame(width, height, &raw_frm) || !initCFrame(width, height, &cfrm_current)) {
 		printf("frame init error\n");
 		return 0;
 	}
@@ -104,6 +115,33 @@ int main(int argc, char **argv)
 
 
 	for (int k = 0; k < FPS; k++) {
+
+		#ifdef RES_CHANGE
+		if(k==RES_CHANGE_FRAME){
+			fclose(fp);
+			destroyRawFrame(&raw_frm);
+			destroyCFrame(&cfrm_current);
+
+			fp = fopen(argv[4], "rb");
+
+			sscanf(argv[5], "%d",  &width);
+			sscanf(argv[6], "%d",  &height);
+			/* Reinitialize structures and SDL */
+			if (!initRawFrame(width, height, &raw_frm) || !initCFrame(width, height, &cfrm_current)) {
+				printf("frame init error\n");
+				return 0;
+			}
+			screen = SDL_SetVideoMode(width, height, 0, 0);
+			if (!screen) {
+				fprintf(stderr, "SDL: could not set video mode - exiting\n");
+				exit(1);
+			}
+
+			bmp = SDL_CreateYUVOverlay(width, height,
+						   SDL_YV12_OVERLAY, screen);
+		}
+
+		#endif
 		#ifndef READ
 		if (!readRawFrame(fp, &raw_frm)) {
 			printf("Error during read\n");
@@ -112,7 +150,7 @@ int main(int argc, char **argv)
 #if 0
 		if(k==101){
 				FILE* fps = fopen("original.yuv", "wb");
-				writeRawFrame(fps, raw_frm.lum, raw_frm.chrm, WIDTH, HEIGHT);
+				writeRawFrame(fps, raw_frm.lum, raw_frm.chrm, width, height);
 				fclose(fps);
 		}
 #endif
@@ -135,7 +173,6 @@ int main(int argc, char **argv)
 		else
 			encodeFrameStateless(&enc, luminance_8bit, chroma_8bit, &cfrm_current);
 
-			printf("ge-encoded\n");
 		#else
 		if (k == 0)
 			encodeFrame(&raw_frm, NULL, NULL, &cfrm_current, pcount);
@@ -153,19 +190,19 @@ int main(int argc, char **argv)
 			uint8_t *chref = chroma_8bit;
 
 			/* Only for timing purposes!!! */
-			for (j = 0; j < HEIGHT/8; j++) {
-				for (i = 0; i < WIDTH/2/8; i++) {
-					ifwht(input, coeffs, WIDTH/2, WIDTH/2, (stat & PFRAME_BIT) ? 0 : 1);
+			for (j = 0; j < height/8; j++) {
+				for (i = 0; i < width/2/8; i++) {
+					ifwht(input, coeffs, width/2, width/2, (stat & PFRAME_BIT) ? 0 : 1);
 					if (stat & PFRAME_BIT) {
 						// add deltas
-						uint8_t *refp = chref + j*8*WIDTH/2 + i*8;
-						addDeltas(coeffs, refp, WIDTH/2);
+						uint8_t *refp = chref + j*8*width/2 + i*8;
+						addDeltas(coeffs, refp, width/2);
 					}
 					coeffs += 8;
 					input += 8;
 				}
-				coeffs += (WIDTH/2)*7;
-				input  += (WIDTH/2)*7;
+				coeffs += (width/2)*7;
+				input  += (width/2)*7;
 			}
 
 			rlco = cfrm_current.rlc_data_lum;
@@ -176,19 +213,19 @@ int main(int argc, char **argv)
 			uint8_t* lref = luminance_8bit;
 
 			/* Only for timing purposes!!! */
-			for (j = 0; j < HEIGHT/8; j++) {
-				for (i = 0; i < WIDTH/8; i++) {
-					ifwht(input, coeffs, WIDTH, WIDTH, (stat & PFRAME_BIT) ? 0 : 1);
+			for (j = 0; j < height/8; j++) {
+				for (i = 0; i < width/8; i++) {
+					ifwht(input, coeffs, width, width, (stat & PFRAME_BIT) ? 0 : 1);
 					if (stat & PFRAME_BIT) {
 						// add deltas
-						uint8_t *refp = lref + j*8*WIDTH + i*8;
-						addDeltas(coeffs, refp, WIDTH);
+						uint8_t *refp = lref + j*8*width + i*8;
+						addDeltas(coeffs, refp, width);
 					}
 					coeffs += 8;
 					input += 8;
 				}
-				coeffs += (WIDTH)*7;
-				input  += (WIDTH)*7;
+				coeffs += (width)*7;
+				input  += (width)*7;
 			}
 			#endif
 			diff = clock() - start;
@@ -206,11 +243,11 @@ int main(int argc, char **argv)
 		diff2 = clock() - start2;
 
 		int msec2 = diff2; // * 1000 / CLOCKS_PER_SEC;
-		printf("%d %d\n", enc.cur_resolution[0], enc.cur_resolution[1]);
-		printf("read %d %d\n", cfrm_current.lum_sz, cfrm_current.chroma_sz);
-		printf("%lf and %lf\n", (float)WIDTH*HEIGHT/cfrm_current.lum_sz * 100, (float)WIDTH*HEIGHT/2/cfrm_current.chroma_sz * 100);
+	//	printf("%d %d\n", enc.cur_resolution[0], enc.cur_resolution[1]);
+	//	printf("read %d %d\n", cfrm_current.lum_sz, cfrm_current.chroma_sz);
+	//	printf("%lf and %lf\n", (float)width*height/cfrm_current.lum_sz * 100, (float)width*height/2/cfrm_current.chroma_sz * 100);
 		#ifdef WRITE_CRATIO
-		fprintf(fp4, "%f, %f\n", (float)WIDTH*HEIGHT/cfrm_current.lum_sz * 100, (float)WIDTH*HEIGHT/2/cfrm_current.chroma_sz * 100);
+		fprintf(fp4, "%f, %f\n", (float)width*height/cfrm_current.lum_sz * 100, (float)width*height/2/cfrm_current.chroma_sz * 100);
 		#endif
 
 		#ifdef WRITE_TIMES
@@ -222,37 +259,37 @@ int main(int argc, char **argv)
 
 		int a;
 
-		for (a = 0; a < WIDTH*HEIGHT; a++)
+		for (a = 0; a < width*height; a++)
 			luminance_8bit[a] = (uint8_t)luminance[a];
 		//  int a;
-		for (a = 0; a < (WIDTH*HEIGHT/2); a++)
+		for (a = 0; a < (width*height/2); a++)
 			chroma_8bit[a] = (uint8_t)chroma[a];
 
 			#ifdef WRITE_RAW
-				writeRawFrame(fp3, luminance_8bit, chroma_8bit, WIDTH, HEIGHT);
+				writeRawFrame(fp3, luminance_8bit, chroma_8bit, width, height);
 			#endif
 
 		SDL_Rect rect;
 
 		SDL_LockYUVOverlay(bmp);
-		memcpy(bmp->pixels[0], luminance_8bit, WIDTH*HEIGHT);
-		memcpy(bmp->pixels[2], chroma_8bit, WIDTH*HEIGHT/4);
-		memcpy(bmp->pixels[1], chroma_8bit + WIDTH*HEIGHT/4, WIDTH*HEIGHT/4);
+		memcpy(bmp->pixels[0], luminance_8bit, width*height);
+		memcpy(bmp->pixels[2], chroma_8bit, width*height/4);
+		memcpy(bmp->pixels[1], chroma_8bit + width*height/4, width*height/4);
 
 		SDL_UnlockYUVOverlay(bmp);
 
 		rect.x = 0;
 		rect.y = 0;
-		rect.w = WIDTH;
-		rect.h = HEIGHT;
+		rect.w = width;
+		rect.h = height;
 		SDL_DisplayYUVOverlay(bmp, &rect);
-		if(k==101){
-			FILE* fps = fopen("sample_frame.yuv", "wb");
-			writeRawFrame(fps, luminance_8bit, chroma_8bit, WIDTH, HEIGHT);
-			fclose(fps);
-			getchar();
-			exit(EXIT_SUCCESS);
-		}
+		// if(k==101){
+		// 	FILE* fps = fopen("sample_frame.yuv", "wb");
+		// 	writeRawFrame(fps, luminance_8bit, chroma_8bit, width, height);
+		// 	fclose(fps);
+		// 	getchar();
+		// 	exit(EXIT_SUCCESS);
+		// }
 
 	}
 

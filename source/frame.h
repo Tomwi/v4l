@@ -50,10 +50,12 @@ typedef struct CFRAME {
 #define IBLOCK (1)
 
 int initRawFrame(const unsigned int width, const unsigned int height, RAW_FRAME *frm);
+void destroyRawFrame(RAW_FRAME* frm);
 int readRawFrame(FILE *fp, RAW_FRAME *out);
 void writeRawFrame(FILE *fp, uint8_t *luminance, uint8_t *chroma, int width, int height);
 
 int initCFrame(const unsigned int width, const unsigned int height, CFRAME *frm);
+void destroyCFrame(CFRAME *frm);
 int readCFrame(FILE *fp, CFRAME *out);
 
 #endif
