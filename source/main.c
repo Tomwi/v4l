@@ -31,18 +31,20 @@
 #include "params.h"
 //#define WRITE
 //#define READ
+#define STATELESS
 #define FPS (500)
-#define WRITE_RAW
-#define WRITE_CRATIO
-#define WRITE_TIMES
-#define TIME_ENCODER
-#define WRITE_PCOUNT
+// #define WRITE_RAW
+// #define WRITE_CRATIO
+// #define WRITE_TIMES
+// #define TIME_ENCODER
+// #define WRITE_PCOUNT
 int16_t chroma[WIDTH*HEIGHT/2], luminance[WIDTH*HEIGHT];
 int8_t chroma_8bit[WIDTH*HEIGHT/2], luminance_8bit[WIDTH*HEIGHT];
 int pcount[2];
 
 int main(int argc, char **argv)
 {
+	ENCODER enc;
 	printf("clocks per sec %d\n", CLOCKS_PER_SEC);
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
 		fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
@@ -88,7 +90,7 @@ int main(int argc, char **argv)
 #ifdef WRITE_PCOUNT
 	FILE* fp6 = fopen("/run/media/tomwi/data/pcount.txt", "wb");
 #endif
- 
+
 
 	if (fp == NULL) {
 		printf("Failed to open %s\n", argv[1]);
@@ -107,13 +109,39 @@ int main(int argc, char **argv)
 			printf("Error during read\n");
 			return 0;
 		}
+#if 0
+		if(k==101){
+				FILE* fps = fopen("original.yuv", "wb");
+				writeRawFrame(fps, raw_frm.lum, raw_frm.chrm, WIDTH, HEIGHT);
+				fclose(fps);
+		}
+#endif
 			clock_t start = clock(), diff;
 		pcount[0] = 0;
 		pcount[1] =0;
+
+		#ifdef STATELESS
+		enc.prev_resolution[0] = enc.cur_resolution[0];
+		enc.prev_resolution[1] = enc.cur_resolution[1];
+		enc.cur_resolution[0] = raw_frm.width;
+		enc.cur_resolution[1] = raw_frm.height;
+		enc.max_pchain = MAX_PCHAIN;
+		// enc.quant_intra = QUANT_TABLE;
+		// enc.quantizeInter = QUANT_TABLE_P;
+		enc.chrm = raw_frm.chrm;
+		enc.luma = raw_frm.lum;
+		if (k == 0)
+			encodeFrameStateless(&enc, NULL, NULL, &cfrm_current);
+		else
+			encodeFrameStateless(&enc, luminance_8bit, chroma_8bit, &cfrm_current);
+
+			printf("ge-encoded\n");
+		#else
 		if (k == 0)
 			encodeFrame(&raw_frm, NULL, NULL, &cfrm_current, pcount);
 		else
 			encodeFrame(&raw_frm, luminance_8bit, chroma_8bit, &cfrm_current, pcount);
+		#endif
 
 			#ifdef TIME_ENCODER
 			int i,j;
@@ -178,6 +206,7 @@ int main(int argc, char **argv)
 		diff2 = clock() - start2;
 
 		int msec2 = diff2; // * 1000 / CLOCKS_PER_SEC;
+		printf("%d %d\n", enc.cur_resolution[0], enc.cur_resolution[1]);
 		printf("read %d %d\n", cfrm_current.lum_sz, cfrm_current.chroma_sz);
 		printf("%lf and %lf\n", (float)WIDTH*HEIGHT/cfrm_current.lum_sz * 100, (float)WIDTH*HEIGHT/2/cfrm_current.chroma_sz * 100);
 		#ifdef WRITE_CRATIO
@@ -217,6 +246,13 @@ int main(int argc, char **argv)
 		rect.w = WIDTH;
 		rect.h = HEIGHT;
 		SDL_DisplayYUVOverlay(bmp, &rect);
+		if(k==101){
+			FILE* fps = fopen("sample_frame.yuv", "wb");
+			writeRawFrame(fps, luminance_8bit, chroma_8bit, WIDTH, HEIGHT);
+			fclose(fps);
+			getchar();
+			exit(EXIT_SUCCESS);
+		}
 
 	}
 

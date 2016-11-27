@@ -32,12 +32,20 @@ typedef struct ENC_FRAME {
 
 
 typedef struct ENCODER {
-
+	unsigned int prev_resolution[2];
+	unsigned int cur_resolution[2];
+	unsigned int  pchain_chrm, pchain_lum;
+	unsigned int max_pchain;
+	const int *quant_intra, *quant_inter;
+	int waspcoded;
+	int waspcoded_chrm;
+	uint8_t* chrm;
+	uint8_t* luma;
 } ENCODER;
 
 int var(int16_t *input);
 void fillBlock(uint8_t *input, int16_t *dst, int stride);
 int itra_dec(uint8_t *current, uint8_t *reference, int16_t *deltablock, int stride);
 void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out, int* pcount);
-
+void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *out);
 #endif
