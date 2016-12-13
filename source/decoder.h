@@ -25,7 +25,15 @@
 #include "rlc.h"
 #include "fwht.h"
 
+typedef struct DECODER_META {
+  unsigned int width, height;
+  int16_t *rlc_data_chrm;
+  int16_t *rlc_data_lum;
+  int16_t *chrm_coeff;
+  int16_t *lum_coeff;
+}DECODER_META;
+
 void addDeltas(int16_t *deltas, uint8_t *ref, int stride);
 void decodeFrame(CFRAME *frm, uint8_t *chref, uint8_t *lref, int16_t *chromaout, int16_t *lumaout);
-
+void decodeFrameStateless(DECODER_META* meta, uint8_t *chref, uint8_t *lref, int16_t *chromaout, int16_t *lumaout);
 #endif

@@ -31,9 +31,9 @@
 #include "params.h"
 //#define WRITE
 //#define READ
-#define RES_CHANGE
-#define RES_CHANGE_FRAME (50)
-#define RES_CHANGE_SCALE_DIV (2)
+//#define RES_CHANGE
+//#define RES_CHANGE_FRAME (50)
+//#define RES_CHANGE_SCALE_DIV (2)
 #define STATELESS
 #define FPS (500)
 // #define WRITE_RAW
@@ -79,6 +79,9 @@ int main(int argc, char **argv)
 				   SDL_YV12_OVERLAY, screen);
 
 	RAW_FRAME raw_frm;
+	ENCODER_META enc_meta;
+	DECODER_META dec_meta;
+
 	CFRAME cfrm_current, cfrm_reference;
 
 	FILE *fp = fopen(argv[1], "rb");
@@ -168,10 +171,20 @@ int main(int argc, char **argv)
 		// enc.quantizeInter = QUANT_TABLE_P;
 		enc.chrm = raw_frm.chrm;
 		enc.luma = raw_frm.lum;
+
+		enc_meta.rlc_data_chrm = cfrm_current.rlc_data_chrm;
+		enc_meta.rlc_data_lum = cfrm_current.rlc_data_lum;
+		enc_meta.chrm_coeff = cfrm_current.chrm_coeff;
+		enc_meta.lum_coeff = cfrm_current.lum_coeff;
+
 		if (k == 0)
-			encodeFrameStateless(&enc, NULL, NULL, &cfrm_current);
+			encodeFrameStateless(&enc, NULL, NULL, &enc_meta);
 		else
-			encodeFrameStateless(&enc, luminance_8bit, chroma_8bit, &cfrm_current);
+			encodeFrameStateless(&enc, luminance_8bit, chroma_8bit, &enc_meta);
+
+		// construct frame header
+		cfrm_current.chroma_sz = enc_meta.chroma_sz;
+		cfrm_current.lum_sz = enc_meta.lum_sz;
 
 		#else
 		if (k == 0)
@@ -239,7 +252,17 @@ int main(int argc, char **argv)
 		#endif
 
 		clock_t start2 = clock(), diff2;
-		decodeFrame(&cfrm_current, chroma_8bit, luminance_8bit, chroma, luminance);
+		#ifdef STATELESS
+		dec_meta.rlc_data_chrm = cfrm_current.rlc_data_chrm;
+		dec_meta.rlc_data_lum = cfrm_current.rlc_data_lum;
+		dec_meta.chrm_coeff = cfrm_current.chrm_coeff;
+		dec_meta.lum_coeff = cfrm_current.lum_coeff;
+		dec_meta.width = cfrm_current.width;
+		dec_meta.height = cfrm_current.height;
+			decodeFrame(&dec_meta, chroma_8bit, luminance_8bit, chroma, luminance);
+		#else
+			decodeFrame(&cfrm_current, chroma_8bit, luminance_8bit, chroma, luminance);
+		#endif
 		diff2 = clock() - start2;
 
 		int msec2 = diff2; // * 1000 / CLOCKS_PER_SEC;

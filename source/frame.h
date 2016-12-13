@@ -27,7 +27,6 @@
 typedef struct RAW_FRAME {
 	unsigned int width, height;
 	uint8_t *lum, *chrm;
-
 } RAW_FRAME;
 
 typedef struct FRAME_HEADER {

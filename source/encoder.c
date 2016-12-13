@@ -100,7 +100,7 @@ int decide_blocktype(uint8_t *current, uint8_t *reference, int16_t *deltablock,
 	return (vari <= vard ? IBLOCK : PBLOCK);
 }
 
-void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *out)
+void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, ENCODER_META* meta)
 {
 	int i, j;
 	int16_t deltablock[64];
@@ -108,8 +108,9 @@ void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *ou
 	// encode chroma plane
 	uint8_t *input = enc->chrm;
 
-	int16_t *coeffs = out->chrm_coeff;
-	int16_t *rlco = out->rlc_data_chrm;
+/* outputs */
+	int16_t *coeffs = meta->chrm_coeff;
+	int16_t *rlco = meta->rlc_data_chrm;
 
 	unsigned int width = enc->cur_resolution[0];
 	unsigned int height = enc->cur_resolution[1];
@@ -149,7 +150,7 @@ void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *ou
 		input  += (width/2)*7;
 	}
 	// size in bytes
-	out->chroma_sz = (unsigned long)rlco - (unsigned long)out->rlc_data_chrm;
+	meta->chroma_sz = (unsigned long)rlco - (unsigned long)meta->rlc_data_chrm;
 
 	if (enc->pchain_chrm == enc->max_pchain)
 		enc->pchain_chrm = 0;
@@ -159,8 +160,8 @@ void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *ou
 
 	/* INTER FRAME */
 	input = enc->luma;
-	coeffs = out->lum_coeff;
-	rlco = out->rlc_data_lum;
+	coeffs = meta->lum_coeff;
+	rlco = meta->rlc_data_lum;
 
 	enc->waspcoded = 0;
 
@@ -190,7 +191,7 @@ void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *ou
 		coeffs += width*7;
 		input += width*7;
 	}
-	out->lum_sz = (unsigned long)rlco - (unsigned long)out->rlc_data_lum;
+	meta->lum_sz = (unsigned long)rlco - (unsigned long)meta->rlc_data_lum;
 	if (enc->pchain_lum == enc->max_pchain)
 		enc->pchain_lum = 0;
 	/* Increase pchain count */

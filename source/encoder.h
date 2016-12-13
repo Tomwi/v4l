@@ -30,7 +30,7 @@ typedef struct ENC_FRAME {
 	int16_t *chroma;
 } ENC_FRAME;
 
-
+/* Encoder state structure */
 typedef struct ENCODER {
 	unsigned int prev_resolution[2];
 	unsigned int cur_resolution[2];
@@ -43,9 +43,20 @@ typedef struct ENCODER {
 	uint8_t* luma;
 } ENCODER;
 
+/* Encoder Meta-deta structure */
+typedef struct ENCODER_META {
+	// inputs to the encoder: pointers to working/output buffers
+	int16_t *rlc_data_chrm;
+	int16_t *rlc_data_lum;
+	int16_t *chrm_coeff;
+	int16_t *lum_coeff;
+	// sizes of luma and chroma planes (compressed) (output of the encoder)
+	unsigned int chroma_sz, lum_sz;
+}ENCODER_META;
+
 int var(int16_t *input);
 void fillBlock(uint8_t *input, int16_t *dst, int stride);
 int itra_dec(uint8_t *current, uint8_t *reference, int16_t *deltablock, int stride);
 void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out, int* pcount);
-void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, CFRAME *out);
+void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, ENCODER_META* meta);
 #endif
