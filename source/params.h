@@ -21,6 +21,11 @@
 
 #define WIDTH (1280)
 #define HEIGHT (720)
+// #define WIDTH (352)
+// #define HEIGHT (288)
+
+// #define WIDTH (176)
+// #define HEIGHT (144)
 
 #define MAX_PCHAIN (10)
 

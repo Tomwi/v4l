@@ -30,7 +30,7 @@ void fillBlock(uint8_t *input, int16_t *dst, int stride)
 	}
 }
 
-int SADINTRA(int16_t *input)
+int VARINTRA(int16_t *input)
 {
 
 	int32_t mean = 0;
@@ -46,14 +46,14 @@ int SADINTRA(int16_t *input)
 	for (i = 0; i < 8*8; i++, tmp++) {
 		int meh = (*tmp - mean) < 0 ? -(*tmp-mean) : (*tmp-mean);
 
-		ret +=	meh*meh;
+		ret +=	meh;//*meh;
 	}
 	return ret;
 
 }
 
 
-int SADINTER(int16_t *old, int16_t *new)
+int VARINTER(int16_t *old, int16_t *new)
 {
 
 	int32_t ret = 0;
@@ -62,7 +62,8 @@ int SADINTER(int16_t *old, int16_t *new)
 	for (i = 0; i < 8*8; i++, old++, new++) {
 		int meh = (*old - *new) < 0 ? -(*old - *new) : (*old-*new);
 
-		ret +=	meh*meh; }
+		ret +=	meh; //*meh;
+	}
 	return ret;
 }
 
@@ -78,7 +79,7 @@ int decide_blocktype(uint8_t *current, uint8_t *reference, int16_t *deltablock,
 	fillBlock(current, tmp, stride);
 	fillBlock(reference, old, stride);
 
-	int sadi = SADINTRA(tmp);
+	int vari = VARINTRA(tmp);
 	int k, l;
 	int16_t *work = tmp;
 
@@ -94,12 +95,111 @@ int decide_blocktype(uint8_t *current, uint8_t *reference, int16_t *deltablock,
 		reference += stride-8;
 	}
 	deltablock -= 64;
-	int sadd = SADINTER(old, tmp);
+	int vard = VARINTER(old, tmp);
 //	printf("%d %d\n", sadi, sadd);
-	return (sadi <= (sadd - 128) ? IBLOCK : PBLOCK);
+	return (vari <= vard ? IBLOCK : PBLOCK);
 }
 
-void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
+void encodeFrameStateless(ENCODER* enc, uint8_t *lref, uint8_t *cref, ENCODER_META* meta)
+{
+	int i, j;
+	int16_t deltablock[64];
+
+	// encode chroma plane
+	uint8_t *input = enc->chrm;
+
+/* outputs */
+	int16_t *coeffs = meta->chrm_coeff;
+	int16_t *rlco = meta->rlc_data_chrm;
+
+	unsigned int width = enc->cur_resolution[0];
+	unsigned int height = enc->cur_resolution[1];
+	if(width != enc->prev_resolution[0] || height != enc->prev_resolution[1]){
+		printf("RESOLUTION CHANGE, FORBIDDING reference frame\n");
+		enc->pchain_chrm = enc->max_pchain;
+		enc->pchain_lum = enc->max_pchain;
+	}
+	enc->waspcoded_chrm = 0;
+	for (j = 0; j < height/8; j++) {
+		for (i = 0; i < width/2/8; i++) {
+			int blocktype = IBLOCK;
+      if (cref != NULL)
+					blocktype = decide_blocktype(input, cref+(int)(input-enc->chrm),
+				      deltablock, width/2);
+
+			if (enc->pchain_chrm == enc->max_pchain || blocktype == IBLOCK) {
+				fwht(input, coeffs, width/2, width/2, 1);
+				quantizeIntra(coeffs, width/2);
+				blocktype = IBLOCK;
+
+			} else{
+				enc->waspcoded_chrm = 1;
+				fwht16(deltablock, coeffs, 8, width/2, 0);
+				quantizeInter(coeffs, width/2);
+			}
+
+			int ret = rlc(coeffs, rlco, width/2, blocktype);
+
+			rlco += ret;
+			// advance to next block in current row
+			coeffs += 8;
+			input += 8;
+		}
+		// advance to next row, since chroma is subsampled, divide by 2
+		coeffs += (width/2)*7;
+		input  += (width/2)*7;
+	}
+	// size in bytes
+	meta->chroma_sz = (unsigned long)rlco - (unsigned long)meta->rlc_data_chrm;
+
+	if (enc->pchain_chrm == enc->max_pchain)
+		enc->pchain_chrm = 0;
+	/* Increase pchain count */
+	if (enc->waspcoded_chrm)
+		enc->pchain_chrm++;
+
+	/* INTER FRAME */
+	input = enc->luma;
+	coeffs = meta->lum_coeff;
+	rlco = meta->rlc_data_lum;
+
+	enc->waspcoded = 0;
+
+	for (j = 0; j < height/8; j++) {
+		for (i = 0; i < width/8; i++) {
+			// intra code, first frame is always intra coded.
+			int blocktype = IBLOCK;
+      if (lref != NULL)
+				blocktype = decide_blocktype(input, lref+(input-enc->luma), deltablock, width);
+			if (enc->pchain_lum == enc->max_pchain || blocktype == IBLOCK) {
+				fwht(input, coeffs, width, width, 1);
+				quantizeIntra(coeffs, width);
+				blocktype = IBLOCK;
+			}
+			// inter code
+			else{
+				enc->waspcoded = 1;
+				fwht16(deltablock, coeffs, 8, width, 0);
+				quantizeInter(coeffs, width);
+			}
+			int ret = rlc(coeffs, rlco, width, blocktype);
+
+			rlco += ret;
+			coeffs += 8;
+			input += 8;
+		}
+		coeffs += width*7;
+		input += width*7;
+	}
+	meta->lum_sz = (unsigned long)rlco - (unsigned long)meta->rlc_data_lum;
+	if (enc->pchain_lum == enc->max_pchain)
+		enc->pchain_lum = 0;
+	/* Increase pchain count */
+	if (enc->waspcoded)
+		enc->pchain_lum++;
+}
+
+void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out, int* pcount)
 {
 	int i, j;
 
@@ -131,7 +231,8 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 
 			} else{
 				waspcoded_chrm = 1;
-				fwht16(deltablock, coeffs, 8, WIDTH/2, 0);
+				pcount[0]++;
+				fwht16(deltablock, coeffs, 8, frm->width/2, 0);
 				quantizeInter(coeffs, frm->width/2);
 			}
 
@@ -175,6 +276,7 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 			}
 			// inter code
 			else{
+				pcount[1]++;
 				waspcoded = 1;
 				fwht16(deltablock, coeffs, 8, frm->width, 0);
 				quantizeInter(coeffs, frm->width);
@@ -185,8 +287,8 @@ void encodeFrame(RAW_FRAME *frm, uint8_t *lref, uint8_t *cref, CFRAME *out)
 			coeffs += 8;
 			input += 8;
 		}
-		coeffs += WIDTH*7;
-		input += WIDTH*7;
+		coeffs += frm->width*7;
+		input += frm->width*7;
 	}
 	out->lum_sz = (unsigned long)rlco - (unsigned long)out->rlc_data_lum;
 	if (pchain_lum == MAX_PCHAIN)

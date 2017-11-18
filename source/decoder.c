@@ -97,3 +97,59 @@ void decodeFrame(CFRAME *frm, uint8_t *chref, uint8_t *lref, int16_t *chromaout,
 		defwht += (frm->width)*7;
 	}
 }
+
+void decodeFrameStateless(DECODER_META *meta, uint8_t *chref, uint8_t *lref, int16_t *chromaout,
+  int16_t *lumaout)
+{
+
+	int i, j;
+
+	int16_t *rlco = meta->rlc_data_chrm;
+	int16_t *derlco = meta->chrm_coeff;
+	int16_t *defwht = chromaout;
+
+	for (j = 0; j < meta->height/8; j++) {
+		for (i = 0; i < meta->width/2/8; i++) {
+			int stat = derlc(&rlco, derlco, meta->width/2);
+      if(stat & PFRAME_BIT)
+        dequantizeInter(derlco, meta->width/2);
+      else
+        dequantizeIntra(derlco, meta->width/2);
+			ifwht(derlco, defwht, meta->width/2, meta->width/2, (stat & PFRAME_BIT) ? 0 : 1);
+			if (stat & PFRAME_BIT) {
+				// add deltas
+				uint8_t *refp = chref + j*8*meta->width/2 + i*8;
+				addDeltas(defwht, refp, meta->width/2);
+			}
+			// advance to next column
+			derlco += 8;
+			defwht += 8;
+		}
+		// advance to next row
+		derlco += (meta->width/2)*7;
+		defwht += (meta->width/2)*7;
+	}
+	rlco = meta->rlc_data_lum;
+	derlco = meta->lum_coeff;
+	defwht = lumaout;
+
+	for (j = 0; j < meta->height/8; j++) {
+		for (i = 0; i < meta->width/8; i++) {
+			int stat = derlc(&rlco, derlco, meta->width);
+      if(stat & PFRAME_BIT)
+        dequantizeInter(derlco, meta->width);
+      else
+        dequantizeIntra(derlco, meta->width);
+			ifwht(derlco, defwht, meta->width, meta->width, (stat & PFRAME_BIT) ? 0 : 1);
+			if (stat & PFRAME_BIT) {
+				// add deltas
+				uint8_t *refp = lref + j*8*meta->width + i*8;
+				addDeltas(defwht, refp, meta->width);
+			}
+			derlco += 8;
+			defwht += 8;
+		}
+		derlco += (meta->width)*7;
+		defwht += (meta->width)*7;
+	}
+}

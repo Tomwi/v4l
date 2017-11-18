@@ -54,6 +54,8 @@
 *.out
 *.pdf
 *.toc
+*.tikz
+*.tex
 
 source/codec
 octave-workspace

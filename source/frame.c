@@ -39,6 +39,13 @@ int initRawFrame(const unsigned int width, const unsigned int height, RAW_FRAME 
 	return 1;
 }
 
+void destroyRawFrame(RAW_FRAME* frm){
+	if(frm->lum)
+		free(frm->lum);
+	if(frm->chrm)
+		free(frm->chrm);
+}
+
 int readRawFrame(FILE *fp, RAW_FRAME *out)
 {
 	if (fp == NULL) {
@@ -96,6 +103,11 @@ int initCFrame(const unsigned int width, const unsigned int height, CFRAME *frm)
 	return 1;
 
 error_init_cframe:
+	destroyCFrame(frm);
+	return 0;
+}
+
+void destroyCFrame(CFRAME *frm){
 	if (frm->rlc_data_lum)
 		free(frm->rlc_data_lum);
 	if (frm->rlc_data_chrm)
@@ -104,7 +116,6 @@ error_init_cframe:
 		free(frm->chrm_coeff);
 	if (frm->lum_coeff)
 		free(frm->lum_coeff);
-	return 0;
 }
 
 int readCFrame(FILE *fp, CFRAME *out)
